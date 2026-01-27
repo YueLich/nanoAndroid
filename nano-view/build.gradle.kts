@@ -32,6 +32,10 @@ android {
     kotlinOptions {
         jvmTarget = rootProject.extra["jvmTarget"] as String
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
