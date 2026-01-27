@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.NanoAndroid" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/nano_primary</item>
+        <item name="colorPrimaryContainer">@color/nano_primary_container</item>
+        <item name="colorOnPrimary">@color/nano_on_primary</item>
+        <item name="colorSecondary">@color/nano_secondary</item>
+        <item name="colorSecondaryContainer">@color/nano_secondary_container</item>
+        <item name="colorOnSecondary">@color/nano_on_secondary</item>
+        <item name="android:statusBarColor">@color/nano_primary</item>
+    </style>
+</resources>
