@@ -58,10 +58,9 @@ class NanoSystemServer(
 
     // ==================== 系统服务实例 ====================
 
-    // TODO: 这些服务将在 nano-framework 中实现
-    // private lateinit var packageManagerService: NanoPackageManagerService
-    // private lateinit var activityManagerService: NanoActivityManagerService
-    // private lateinit var windowManagerService: NanoWindowManagerService
+    private lateinit var packageManagerService: com.nano.framework.pm.NanoPackageManagerService
+    private lateinit var activityManagerService: com.nano.framework.am.NanoActivityManagerService
+    private lateinit var windowManagerService: com.nano.framework.wm.NanoWindowManagerService
 
     /**
      * 启动系统服务器
@@ -114,17 +113,15 @@ class NanoSystemServer(
 
         // 1. PackageManagerService - 管理应用包
         NanoLog.i(TAG, "Starting PackageManagerService...")
-        // TODO: 创建并启动 PMS
-        // packageManagerService = NanoPackageManagerService(context)
-        // NanoServiceManager.addService(PACKAGE_SERVICE, packageManagerService.asBinder())
+        packageManagerService = com.nano.framework.pm.NanoPackageManagerService(context)
+        NanoServiceManager.addService(PACKAGE_SERVICE, packageManagerService)
         servicesReadyLatch.countDown()
         NanoLog.i(TAG, "PackageManagerService started")
 
         // 2. ActivityManagerService - 管理 Activity 和进程
         NanoLog.i(TAG, "Starting ActivityManagerService...")
-        // TODO: 创建并启动 AMS
-        // activityManagerService = NanoActivityManagerService(context, packageManagerService)
-        // NanoServiceManager.addService(ACTIVITY_SERVICE, activityManagerService.asBinder())
+        activityManagerService = com.nano.framework.am.NanoActivityManagerService(context, packageManagerService)
+        NanoServiceManager.addService(ACTIVITY_SERVICE, activityManagerService)
         servicesReadyLatch.countDown()
         NanoLog.i(TAG, "ActivityManagerService started")
     }
@@ -139,12 +136,8 @@ class NanoSystemServer(
 
         // WindowManagerService - 管理窗口
         NanoLog.i(TAG, "Starting WindowManagerService...")
-        // TODO: 创建并启动 WMS
-        // windowManagerService = NanoWindowManagerService(context, activityManagerService)
-        // NanoServiceManager.addService(WINDOW_SERVICE, windowManagerService.asBinder())
-
-        // 建立 AMS 和 WMS 的关联
-        // activityManagerService.setWindowManager(windowManagerService)
+        windowManagerService = com.nano.framework.wm.NanoWindowManagerService(context, activityManagerService)
+        NanoServiceManager.addService(WINDOW_SERVICE, windowManagerService)
 
         servicesReadyLatch.countDown()
         NanoLog.i(TAG, "WindowManagerService started")
@@ -179,8 +172,9 @@ class NanoSystemServer(
         isSystemReady = true
 
         // 通知所有服务系统就绪
-        // activityManagerService.systemReady()
-        // windowManagerService.systemReady()
+        packageManagerService.systemReady()
+        activityManagerService.systemReady()
+        windowManagerService.systemReady()
         // llmService?.systemReady()
 
         // 列出已注册的服务
@@ -189,7 +183,7 @@ class NanoSystemServer(
 
         // 启动 Home Activity (Launcher)
         NanoLog.i(TAG, "Starting Home Activity...")
-        // activityManagerService.startHomeActivity()
+        activityManagerService.startHomeActivity()
     }
 
     /**
