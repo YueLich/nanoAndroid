@@ -354,6 +354,13 @@ class NanoBundle(
 
     fun keySet(): Set<String> = data.keys
 
+    /**
+     * 将另一个 Bundle 的所有数据复制到当前 Bundle
+     */
+    fun putAll(bundle: NanoBundle) {
+        data.putAll(bundle.data)
+    }
+
     fun copy(): NanoBundle = NanoBundle(data.toMutableMap())
 
     override fun toString(): String = "NanoBundle($data)"
