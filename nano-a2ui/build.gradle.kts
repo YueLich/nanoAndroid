@@ -25,6 +25,10 @@ android {
         }
     }
 
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -40,6 +44,7 @@ dependencies {
     implementation(project(":nano-kernel"))
     implementation(project(":nano-framework"))
     implementation(project(":nano-app"))
+    implementation(project(":nano-view"))
     implementation(project(":nano-llm"))
 
     // AndroidX

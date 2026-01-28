@@ -32,6 +32,10 @@ android {
     kotlinOptions {
         jvmTarget = rootProject.extra["jvmTarget"] as String
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -51,5 +55,6 @@ dependencies {
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.test.ext.junit)
 }
