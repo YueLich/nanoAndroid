@@ -56,11 +56,40 @@ class NanoSystemServer(
     @Volatile
     private var isSystemReady = false
 
+    /** 外部服务工厂列表（避免模块循环依赖） */
+    private val externalServiceFactories = mutableListOf<Pair<String, () -> com.nano.kernel.binder.NanoBinder>>()
+
+    /** 系统就绪回调列表 */
+    private val systemReadyCallbacks = mutableListOf<() -> Unit>()
+
     // ==================== 系统服务实例 ====================
 
     private lateinit var packageManagerService: com.nano.framework.pm.NanoPackageManagerService
     private lateinit var activityManagerService: com.nano.framework.am.NanoActivityManagerService
     private lateinit var windowManagerService: com.nano.framework.wm.NanoWindowManagerService
+
+    /**
+     * 注册外部服务工厂
+     *
+     * 用于避免 nano-framework 对 nano-llm 等模块的直接依赖。
+     * 外部模块在系统启动前调用此方法注册服务工厂，
+     * Phase 3 时自动创建并注册到 NanoServiceManager。
+     *
+     * @param name 服务名称（如 "llm"）
+     * @param factory 服务工厂 lambda，返回 NanoBinder 实例
+     */
+    fun registerExternalService(name: String, factory: () -> com.nano.kernel.binder.NanoBinder) {
+        externalServiceFactories.add(name to factory)
+    }
+
+    /**
+     * 注册系统就绪回调
+     *
+     * 外部服务可以注册回调，在系统所有服务启动后被通知。
+     */
+    fun registerSystemReadyCallback(callback: () -> Unit) {
+        systemReadyCallbacks.add(callback)
+    }
 
     /**
      * 启动系统服务器
@@ -145,20 +174,24 @@ class NanoSystemServer(
 
     /**
      * Phase 3: 启动其他服务
+     *
+     * 包括外部模块通过 registerExternalService() 注册的服务（如 LLMService）
      */
     private fun startOtherServices() {
         NanoLog.i(TAG, "--------------------------------------------")
         NanoLog.i(TAG, "Phase 3: Starting other services...")
         NanoLog.i(TAG, "--------------------------------------------")
 
-        // LLMService - AI 服务
-        NanoLog.i(TAG, "Starting LLMService...")
-        // TODO: 创建并启动 LLMService
-        // llmService = NanoLLMService(context)
-        // NanoServiceManager.addService(LLM_SERVICE, llmService.asBinder())
+        // 启动外部注册的服务（如 LLMService，由 nano-llm 模块注册）
+        externalServiceFactories.forEach { (name, factory) ->
+            NanoLog.i(TAG, "Starting external service: $name...")
+            val service = factory()
+            NanoServiceManager.addService(name, service)
+            NanoLog.i(TAG, "External service started: $name")
+        }
 
         servicesReadyLatch.countDown()
-        NanoLog.i(TAG, "LLMService started")
+        NanoLog.i(TAG, "Other services started")
     }
 
     /**
@@ -175,7 +208,15 @@ class NanoSystemServer(
         packageManagerService.systemReady()
         activityManagerService.systemReady()
         windowManagerService.systemReady()
-        // llmService?.systemReady()
+
+        // 通知外部服务系统就绪
+        systemReadyCallbacks.forEach { callback ->
+            try {
+                callback()
+            } catch (e: Exception) {
+                NanoLog.e(TAG, "System ready callback failed", e)
+            }
+        }
 
         // 列出已注册的服务
         val services = NanoServiceManager.listServices()
