@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 标题 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="NanoAndroid Shell"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:paddingBottom="16dp" />
+
+    <!-- 系统状态 -->
+    <TextView
+        android:id="@+id/tvSystemStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="System Status: Initializing..."
+        android:textSize="14sp"
+        android:paddingBottom="8dp" />
+
+    <!-- 注册的 Agents -->
+    <TextView
+        android:id="@+id/tvAgents"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Agents: Loading..."
+        android:textSize="14sp"
+        android:paddingBottom="16dp" />
+
+    <!-- 分隔线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#CCCCCC"
+        android:layout_marginVertical="8dp" />
+
+    <!-- 输入区域 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Natural Language Input:"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:paddingBottom="8dp" />
+
+    <EditText
+        android:id="@+id/etUserInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Try: 计算 2 + 3, 新增笔记"
+        android:minHeight="48dp"
+        android:paddingHorizontal="12dp" />
+
+    <Button
+        android:id="@+id/btnProcess"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Process Input"
+        android:layout_marginTop="8dp" />
+
+    <!-- 响应区域 -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Response:"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <TextView
+            android:id="@+id/tvResponse"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="(No response yet)"
+            android:textSize="14sp"
+            android:padding="12dp"
+            android:background="#F5F5F5" />
+    </ScrollView>
+
+</LinearLayout>
