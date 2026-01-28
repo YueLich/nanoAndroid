@@ -1,0 +1,57 @@
+# LLM Provider 配置示例
+# 复制此文件为 gradle.properties 并填入真实的配置
+
+# ==================== Provider 选择 ====================
+# 可选值: mock, groq, openrouter, together, openai, claude, local
+llm.provider=mock
+
+# ==================== API Key ====================
+# 根据选择的 Provider 填写对应的 API Key
+# 注意：gradle.properties 已被 .gitignore 排除，不会提交到 Git
+llm.apiKey=
+
+# ==================== 模型选择 ====================
+# 留空则使用 Provider 的默认模型
+# Groq 推荐: mixtral-8x7b-32768, llama-3.3-70b-versatile
+# OpenRouter 推荐: google/gemini-2.0-flash-exp:free
+# Together 推荐: meta-llama/Llama-3-8b-chat-hf
+llm.model=
+
+# ==================== Base URL (可选) ====================
+# 通常不需要设置，程序会根据 provider 自动选择
+# 仅在使用自定义端点时填写
+llm.baseUrl=
+
+# ==================== 示例配置 ====================
+
+# 使用 Groq (推荐，免费且快速)
+# llm.provider=groq
+# llm.apiKey=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# llm.model=mixtral-8x7b-32768
+
+# 使用 OpenRouter (多模型选择)
+# llm.provider=openrouter
+# llm.apiKey=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# llm.model=google/gemini-2.0-flash-exp:free
+
+# 使用 Together.ai
+# llm.provider=together
+# llm.apiKey=xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# llm.model=meta-llama/Llama-3-8b-chat-hf
+
+# 使用 OpenAI
+# llm.provider=openai
+# llm.apiKey=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# llm.model=gpt-3.5-turbo
+
+# 使用 Claude
+# llm.provider=claude
+# llm.apiKey=sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# llm.model=claude-3-haiku-20240307
+
+# ==================== 获取 API Key ====================
+# Groq: https://console.groq.com/keys
+# OpenRouter: https://openrouter.ai/keys
+# Together: https://api.together.xyz/settings/api-keys
+# OpenAI: https://platform.openai.com/api-keys
+# Claude: https://console.anthropic.com/settings/keys

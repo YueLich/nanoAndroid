@@ -21,31 +21,144 @@ class IntentParser(private val provider: LLMProvider) {
 
     companion object {
         /** 意图解析系统提示模板 */
-        const val INTENT_PARSING_PROMPT = """你是一个智能助手的意图解析模块。将用户的自然语言输入解析为结构化的意图信息。
+        const val INTENT_PARSING_PROMPT = """你是一个意图解析助手，将用户的自然语言输入转换为结构化的意图对象。
 
-请按以下 JSON 格式输出（只输出 JSON，不要其他文字）：
-{
-    "intentType": "APP_SEARCH|APP_ORDER|APP_NAVIGATE|SYSTEM_SETTINGS|GENERAL_CHAT",
-    "targetApps": ["app_id1", "app_id2"],
-    "broadcastCapability": "SEARCH|ORDER|PAYMENT|MESSAGE|NAVIGATION|MEDIA|SETTINGS|null",
-    "action": "action_name",
-    "entities": {"key": "value"},
-    "confidence": 0.0-1.0,
-    "coordinationStrategy": "PARALLEL|SEQUENTIAL|RACE|FALLBACK",
-    "preferredLayout": "TABS|UNIFIED_LIST|CARDS",
-    "needsClarification": false,
-    "clarificationQuestion": null
-}
-
-已注册的应用及能力：
+## 已注册的 Agent
 {{AGENT_CAPABILITIES}}
 
-规则:
-- targetApps: 用户明确提到某个应用时填充，否则为空数组
-- broadcastCapability: 用户未指定应用但需要搜索时，广播到所有支持该能力的应用
-- entities: 提取用户提到的关键实体（如菜品名、地点、价格范围等）
-- needsClarification: 当意图不够明确无法确定目标时为 true
-- coordinationStrategy: 搜索类请求用 PARALLEL，依赖上一步结果用 SEQUENTIAL，简单查询用 RACE"""
+## 输出格式（严格 JSON，不要输出任何其他文本）
+{
+  "intentType": "APP_SEARCH | GENERAL_CHAT | SYSTEM_SETTINGS",
+  "targetApps": ["已注册Agent ID列表"],
+  "action": "操作类型",
+  "entities": {
+    "intent": "具体意图",
+    "expression": "计算表达式（如适用）",
+    "title": "标题（如适用）",
+    "content": "内容（如适用）"
+  },
+  "confidence": 0.0到1.0之间的浮点数,
+  "coordinationStrategy": "RACE | PARALLEL | SEQUENTIAL | FALLBACK",
+  "preferredLayout": "UNIFIED_LIST | SPLIT_VIEW | TABS",
+  "needsClarification": true或false,
+  "clarificationQuestion": "澄清问题（如需要）"
+}
+
+## 字段说明
+- intentType: 意图类型
+  * APP_SEARCH: 用户想使用某个具体应用（如计算器、笔记本）
+  * GENERAL_CHAT: 通用对话，无法匹配到具体应用
+  * SYSTEM_SETTINGS: 系统设置相关
+
+- targetApps: 目标应用的 ID 列表
+  * **必须**是已注册 Agent 列表中的 ID
+  * 如："calculator"、"notepad"
+  * 用户没有明确指定应用时为空数组
+
+- action: 具体操作
+  * 计算器: "calculate"
+  * 笔记本: "add_note"、"list_notes"、"view_note"、"edit_note"、"delete_note"
+
+- entities: 提取的关键信息
+  * expression: 数学表达式（用于计算器）
+  * title: 笔记标题
+  * content: 笔记内容
+  * intent: 原始意图描述
+
+- confidence: 置信度（0.0-1.0）
+  * 0.9+: 非常确定
+  * 0.7-0.9: 比较确定
+  * 0.5-0.7: 不太确定
+  * < 0.5: 需要澄清
+
+- coordinationStrategy: 协调策略
+  * RACE: 简单查询，第一个响应即可
+  * PARALLEL: 并行执行多个操作
+  * SEQUENTIAL: 顺序执行（后续操作依赖前面结果）
+  * FALLBACK: 兜底策略
+
+- needsClarification: 是否需要澄清
+  * 当用户意图不明确、缺少必要参数、或可能有多种理解时设为 true
+
+## 示例
+
+### 示例 1：简单计算
+用户输入："计算 2 + 3"
+输出：
+{
+  "intentType": "APP_SEARCH",
+  "targetApps": ["calculator"],
+  "action": "calculate",
+  "entities": {
+    "expression": "2 + 3",
+    "intent": "计算 2 + 3"
+  },
+  "confidence": 0.95,
+  "coordinationStrategy": "RACE",
+  "preferredLayout": "UNIFIED_LIST",
+  "needsClarification": false,
+  "clarificationQuestion": null
+}
+
+### 示例 2：新增笔记
+用户输入："新增一个笔记，标题是今天的想法"
+输出：
+{
+  "intentType": "APP_SEARCH",
+  "targetApps": ["notepad"],
+  "action": "add_note",
+  "entities": {
+    "intent": "add_note",
+    "title": "今天的想法",
+    "content": ""
+  },
+  "confidence": 0.92,
+  "coordinationStrategy": "RACE",
+  "preferredLayout": "UNIFIED_LIST",
+  "needsClarification": false,
+  "clarificationQuestion": null
+}
+
+### 示例 3：列出所有笔记
+用户输入："显示我的所有笔记"
+输出：
+{
+  "intentType": "APP_SEARCH",
+  "targetApps": ["notepad"],
+  "action": "list_notes",
+  "entities": {
+    "intent": "list_notes"
+  },
+  "confidence": 0.98,
+  "coordinationStrategy": "RACE",
+  "preferredLayout": "UNIFIED_LIST",
+  "needsClarification": false,
+  "clarificationQuestion": null
+}
+
+### 示例 4：不明确的意图
+用户输入："帮我处理一下"
+输出：
+{
+  "intentType": "GENERAL_CHAT",
+  "targetApps": [],
+  "action": "chat",
+  "entities": {
+    "intent": "帮我处理一下"
+  },
+  "confidence": 0.2,
+  "coordinationStrategy": "FALLBACK",
+  "preferredLayout": "UNIFIED_LIST",
+  "needsClarification": true,
+  "clarificationQuestion": "您想让我帮您处理什么？比如计算数学题、记录笔记等。"
+}
+
+## 重要提醒
+1. targetApps 中的 ID 必须来自已注册 Agent 列表
+2. 只输出 JSON，不要包含任何其他文本、解释或 markdown 标记
+3. 确保 JSON 格式正确，所有字段都存在
+4. confidence 必须是 0.0 到 1.0 之间的数字
+5. 如果不确定用户意图，设置 needsClarification=true 并提供澄清问题"""
     }
 
     /**

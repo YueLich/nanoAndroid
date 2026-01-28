@@ -86,21 +86,30 @@ class CalculatorAgent : BaseAppAgent("calculator", "计算器") {
     }
 
     private fun tokenize(expr: String): List<String> {
+        val sanitizedExpr = expr
+            .replace('＋', '+')
+            .replace('－', '-')
+            .replace('×', '*')
+            .replace('÷', '/')
+            .replace('（', '(')
+            .replace('）', ')')
+
         val tokens = mutableListOf<String>()
         var i = 0
-        while (i < expr.length) {
+        while (i < sanitizedExpr.length) {
             when {
-                expr[i].isWhitespace() -> i++
-                expr[i].isDigit() || expr[i] == '.' -> {
+                sanitizedExpr[i].isWhitespace() -> i++
+                sanitizedExpr[i].isDigit() || sanitizedExpr[i] == '.' -> {
                     val start = i
-                    while (i < expr.length && (expr[i].isDigit() || expr[i] == '.')) i++
-                    tokens.add(expr.substring(start, i))
+                    while (i < sanitizedExpr.length && (sanitizedExpr[i].isDigit() || sanitizedExpr[i] == '.')) i++
+                    tokens.add(sanitizedExpr.substring(start, i))
                 }
-                expr[i] in "+-*/()^%" -> {
-                    tokens.add(expr[i].toString())
+                sanitizedExpr[i] in "+-*/()^%" -> {
+                    tokens.add(sanitizedExpr[i].toString())
                     i++
                 }
-                else -> throw CalculationException("非法字符: ${expr[i]}")
+                // Skip other characters
+                else -> i++
             }
         }
         return tokens

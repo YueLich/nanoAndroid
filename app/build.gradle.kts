@@ -15,6 +15,12 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // LLM 配置（从 gradle.properties 或环境变量读取）
+        buildConfigField("String", "LLM_PROVIDER", "\"${project.findProperty("llm.provider") ?: "mock"}\"")
+        buildConfigField("String", "LLM_API_KEY", "\"${project.findProperty("llm.apiKey") ?: ""}\"")
+        buildConfigField("String", "LLM_MODEL", "\"${project.findProperty("llm.model") ?: ""}\"")
+        buildConfigField("String", "LLM_BASE_URL", "\"${project.findProperty("llm.baseUrl") ?: ""}\"")
     }
 
     buildTypes {
@@ -38,6 +44,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true  // 启用 BuildConfig
     }
 }
 

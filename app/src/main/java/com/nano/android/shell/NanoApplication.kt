@@ -1,9 +1,11 @@
 package com.nano.android.shell
 
 import android.app.Application
+import com.nano.android.BuildConfig
 import com.nano.framework.server.NanoSystemServer
 import com.nano.kernel.NanoLog
 import com.nano.kernel.binder.NanoServiceManager
+import com.nano.kernel.handler.NanoLooper
 import com.nano.llm.model.LLMConfig
 import com.nano.llm.model.ProviderType
 import com.nano.llm.service.NanoLLMService
@@ -43,6 +45,9 @@ class NanoApplication : Application() {
         NanoLog.i(TAG, "============================================")
         NanoLog.i(TAG, "NanoAndroid starting...")
         NanoLog.i(TAG, "============================================")
+        
+        // Prepare main looper
+        NanoLooper.prepareMainLooper()
 
         // 初始化系统服务
         initializeSystemServer()
@@ -85,12 +90,46 @@ class NanoApplication : Application() {
     private fun createLLMService(): NanoLLMService {
         NanoLog.i(TAG, "Creating NanoLLMService...")
 
-        // 使用 MockLLMProvider（开发测试阶段）
-        // 生产环境可切换为 OpenAI / Claude / Local
+        // 从 BuildConfig 读取配置（支持多种 Provider）
+        val providerName = BuildConfig.LLM_PROVIDER
+        val providerType = when (providerName) {
+            "groq" -> ProviderType.OPENAI  // Groq 兼容 OpenAI API
+            "openrouter" -> ProviderType.OPENAI
+            "together" -> ProviderType.OPENAI
+            "openai" -> ProviderType.OPENAI
+            "claude" -> ProviderType.CLAUDE
+            "local" -> ProviderType.LOCAL
+            "mock" -> ProviderType.MOCK
+            else -> {
+                NanoLog.w(TAG, "Unknown LLM provider: $providerName, falling back to MOCK")
+                ProviderType.MOCK
+            }
+        }
+
+        val baseUrl = when (providerName) {
+            "groq" -> "https://api.groq.com/openai/v1"
+            "openrouter" -> "https://openrouter.ai/api/v1"
+            "together" -> "https://api.together.xyz/v1"
+            else -> BuildConfig.LLM_BASE_URL.takeIf { it.isNotEmpty() }
+        }
+
+        val model = BuildConfig.LLM_MODEL.takeIf { it.isNotEmpty() } ?: when (providerName) {
+            "groq" -> "mixtral-8x7b-32768"
+            "openrouter" -> "google/gemini-2.0-flash-exp:free"
+            "together" -> "meta-llama/Llama-3-8b-chat-hf"
+            "openai" -> "gpt-3.5-turbo"
+            "claude" -> "claude-3-haiku-20240307"
+            else -> null
+        }
+
         val config = LLMConfig(
-            providerType = ProviderType.MOCK,
-            apiKey = "" // Mock 不需要 API key
+            providerType = providerType,
+            apiKey = BuildConfig.LLM_API_KEY.takeIf { it.isNotEmpty() },
+            baseUrl = baseUrl,
+            model = model
         )
+
+        NanoLog.i(TAG, "LLM Config - Provider: $providerName, Model: $model, BaseUrl: $baseUrl")
 
         llmService = NanoLLMService(config)
         llmService.start()

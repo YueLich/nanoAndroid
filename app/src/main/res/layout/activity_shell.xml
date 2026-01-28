@@ -79,14 +79,33 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <TextView
-            android:id="@+id/tvResponse"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="(No response yet)"
-            android:textSize="14sp"
-            android:padding="12dp"
-            android:background="#F5F5F5" />
+            android:orientation="vertical">
+
+            <!-- 文本响应 -->
+            <TextView
+                android:id="@+id/tvResponse"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="(No response yet)"
+                android:textSize="14sp"
+                android:padding="12dp"
+                android:background="#F5F5F5" />
+
+            <!-- A2UI 渲染容器 -->
+            <FrameLayout
+                android:id="@+id/a2uiContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:padding="16dp"
+                android:background="#FFFFFF"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
     </ScrollView>
 
 </LinearLayout>

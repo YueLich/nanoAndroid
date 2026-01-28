@@ -94,3 +94,4 @@ lint-baseline.xml
 secrets.properties
 api-keys.properties
 llm-config.properties
+gradle.properties  # LLM API keys and sensitive configuration
