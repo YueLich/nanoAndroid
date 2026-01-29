@@ -1,6 +1,5 @@
 package com.nano.app.activity
 
-import android.content.Context
 import com.nano.app.context.NanoContext
 import com.nano.app.intent.NanoIntent
 import com.nano.kernel.NanoLog
@@ -8,9 +7,14 @@ import com.nano.kernel.NanoLog
 /**
  * NanoActivity - Activity 基类
  *
- * 模拟 Android Activity 的生命周期和功能
+ * 纯 Kotlin 实现，不依赖 Android
  */
-abstract class NanoActivity(androidContext: Context) : NanoContext(androidContext) {
+abstract class NanoActivity : NanoContext() {
+
+    /** Activity 所属的应用包名 */
+    protected open val activityPackageName: String = "com.nano.app"
+
+    override fun getPackageName(): String = activityPackageName
 
     companion object {
         private const val TAG = "NanoActivity"

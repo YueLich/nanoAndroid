@@ -1,6 +1,6 @@
 package com.nano.framework.am
 
-import android.content.Context
+import com.nano.framework.common.NanoContext
 import com.nano.framework.pm.NanoPackageManagerService
 import com.nano.kernel.NanoLog
 import com.nano.kernel.binder.NanoBinder
@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * 3. Activity 启动和销毁
  */
 class NanoActivityManagerService(
-    private val context: Context,
+    private val context: NanoContext,
     private val packageManager: NanoPackageManagerService
 ) : NanoBinder(), INanoActivityManager {
 

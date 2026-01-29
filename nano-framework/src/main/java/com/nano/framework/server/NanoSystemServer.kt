@@ -1,13 +1,13 @@
 package com.nano.framework.server
 
-import android.content.Context
-import android.os.HandlerThread
+import com.nano.framework.common.NanoContext
 import com.nano.kernel.NanoLog
 import com.nano.kernel.binder.NanoServiceManager
 import com.nano.kernel.handler.NanoHandler
 import com.nano.kernel.handler.NanoLooper
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 /**
  * NanoSystemServer - 系统服务启动器
@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit
  *    - 启动 Launcher
  */
 class NanoSystemServer(
-    private val context: Context
+    private val context: NanoContext
 ) {
 
     companion object {
@@ -44,7 +44,7 @@ class NanoSystemServer(
     }
 
     /** 系统服务线程 */
-    private lateinit var systemThread: HandlerThread
+    private var systemThread: Thread? = null
 
     /** 系统服务 Handler */
     private lateinit var systemHandler: NanoHandler
@@ -99,19 +99,11 @@ class NanoSystemServer(
         NanoLog.i(TAG, "NanoSystemServer starting...")
         NanoLog.i(TAG, "============================================")
 
-        // 创建系统服务线程
-        systemThread = HandlerThread("NanoSystemServerThread").apply {
-            start()
-        }
-
-        // 为系统服务线程创建 Looper（如果需要使用 NanoLooper）
-        // 这里我们使用 Android 的 HandlerThread，它自带 Looper
-
-        // 创建系统 Handler
+        // 创建系统 Handler（使用 NanoLooper）
         systemHandler = NanoHandler(NanoLooper.getMainLooper())
 
-        // 在系统线程上启动服务
-        android.os.Handler(systemThread.looper).post {
+        // 在独立线程上启动服务
+        systemThread = thread(name = "NanoSystemServerThread") {
             try {
                 // Phase 1: 启动引导服务
                 startBootstrapServices()
@@ -253,8 +245,9 @@ class NanoSystemServer(
     fun shutdown() {
         NanoLog.i(TAG, "Shutting down NanoSystemServer...")
 
-        // 停止系统线程
-        systemThread.quitSafely()
+        // 等待系统线程结束
+        systemThread?.interrupt()
+        systemThread?.join(5000)
 
         isSystemReady = false
     }

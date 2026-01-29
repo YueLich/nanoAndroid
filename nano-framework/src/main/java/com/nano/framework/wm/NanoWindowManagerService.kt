@@ -1,7 +1,7 @@
 package com.nano.framework.wm
 
-import android.content.Context
-import android.graphics.Rect
+import com.nano.framework.common.NanoContext
+import com.nano.framework.common.NanoRect
 import com.nano.framework.am.NanoActivityManagerService
 import com.nano.kernel.NanoLog
 import com.nano.kernel.binder.NanoBinder
@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
  * - 实际的 View 容器由 Shell Activity 管理
  */
 class NanoWindowManagerService(
-    private val context: Context,
+    private val context: NanoContext,
     private val activityManager: NanoActivityManagerService
 ) : NanoBinder(), INanoWindowManager {
 
@@ -50,7 +50,7 @@ class NanoWindowManagerService(
     override fun addWindow(
         token: String,
         type: NanoWindowState.WindowType,
-        frame: Rect
+        frame: NanoRect
     ): Boolean {
         synchronized(lock) {
             if (windows.containsKey(token)) {
@@ -117,7 +117,7 @@ class NanoWindowManagerService(
         }
     }
 
-    override fun updateWindowLayout(token: String, frame: Rect): Boolean {
+    override fun updateWindowLayout(token: String, frame: NanoRect): Boolean {
         synchronized(lock) {
             val window = windows[token]
             if (window == null) {
@@ -125,7 +125,7 @@ class NanoWindowManagerService(
                 return false
             }
 
-            window.frame.set(frame)
+            window.frame.set(frame.left, frame.top, frame.right, frame.bottom)
             NanoLog.d(TAG, "Window layout updated: $token")
             return true
         }
@@ -236,7 +236,7 @@ class NanoWindowManagerService(
                 val top = data.readInt()
                 val right = data.readInt()
                 val bottom = data.readInt()
-                val frame = Rect(left, top, right, bottom)
+                val frame = NanoRect(left, top, right, bottom)
                 val result = addWindow(token, type, frame)
                 reply?.writeBoolean(result)
                 return true

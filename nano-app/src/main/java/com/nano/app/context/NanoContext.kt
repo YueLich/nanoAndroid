@@ -1,11 +1,9 @@
 package com.nano.app.context
 
-import android.content.Context
 import com.nano.app.intent.NanoIntent
 import com.nano.framework.am.INanoActivityManager
 import com.nano.framework.pm.INanoPackageManager
 import com.nano.framework.wm.INanoWindowManager
-import com.nano.kernel.binder.NanoBinder
 import com.nano.kernel.binder.NanoServiceManager
 import com.nano.kernel.handler.NanoHandler
 import com.nano.kernel.handler.NanoLooper
@@ -13,12 +11,9 @@ import com.nano.kernel.handler.NanoLooper
 /**
  * NanoContext - 应用上下文
  *
- * 模拟 Android Context，提供访问系统服务和资源的能力
+ * 纯 Kotlin 实现，不依赖 Android Context
  */
-abstract class NanoContext(
-    /** Android 原生 Context（用于访问真实的系统资源） */
-    internal val androidContext: Context
-) {
+abstract class NanoContext {
 
     /** 主线程 Handler */
     internal val mainHandler: NanoHandler by lazy {
@@ -112,14 +107,9 @@ abstract class NanoContext(
     // ==================== 资源访问 ====================
 
     /**
-     * 获取应用包名
+     * 获取应用包名（子类必须实现）
      */
-    fun getPackageName(): String = androidContext.packageName
-
-    /**
-     * 获取应用信息
-     */
-    fun getApplicationInfo() = androidContext.applicationInfo
+    abstract fun getPackageName(): String
 
     // ==================== 线程和 Handler ====================
 

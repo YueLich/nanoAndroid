@@ -1,49 +1,19 @@
 plugins {
-    alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)
+    kotlin("jvm")
 }
 
-android {
-    namespace = "com.nano.framework"
-    compileSdk = rootProject.extra["compileSdk"] as Int
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
 
-    defaultConfig {
-        minSdk = rootProject.extra["minSdk"] as Int
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles("consumer-rules.pro")
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlinOptions {
-        jvmTarget = rootProject.extra["jvmTarget"] as String
-    }
-
-    testOptions {
-        unitTests.isReturnDefaultValues = true
-    }
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
     // NanoAndroid 模块依赖
     implementation(project(":nano-kernel"))
-
-    // AndroidX
-    implementation(libs.androidx.core.ktx)
 
     // Coroutines
     implementation(libs.bundles.coroutines)
@@ -53,5 +23,4 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation("org.mockito:mockito-core:5.5.0")
     testImplementation("org.mockito:mockito-inline:5.2.0")
-    androidTestImplementation(libs.androidx.test.ext.junit)
 }

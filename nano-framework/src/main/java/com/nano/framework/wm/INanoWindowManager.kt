@@ -1,6 +1,6 @@
 package com.nano.framework.wm
 
-import android.graphics.Rect
+import com.nano.framework.common.NanoRect
 import com.nano.kernel.binder.INanoInterface
 import com.nano.kernel.binder.NanoBinder
 
@@ -20,7 +20,7 @@ interface INanoWindowManager : INanoInterface {
     fun addWindow(
         token: String,
         type: NanoWindowState.WindowType,
-        frame: Rect
+        frame: NanoRect
     ): Boolean
 
     /**
@@ -31,7 +31,7 @@ interface INanoWindowManager : INanoInterface {
     /**
      * 更新窗口布局
      */
-    fun updateWindowLayout(token: String, frame: Rect): Boolean
+    fun updateWindowLayout(token: String, frame: NanoRect): Boolean
 
     /**
      * 设置窗口可见性

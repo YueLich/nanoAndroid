@@ -1,6 +1,6 @@
 package com.nano.framework.pm
 
-import android.content.Context
+import com.nano.framework.common.NanoContext
 import com.nano.kernel.NanoLog
 import com.nano.kernel.binder.NanoBinder
 import com.nano.kernel.binder.NanoParcel
@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
  * - 不支持权限管理
  */
 class NanoPackageManagerService(
-    private val context: Context
+    private val context: NanoContext
 ) : NanoBinder(), INanoPackageManager {
 
     companion object {

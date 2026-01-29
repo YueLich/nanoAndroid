@@ -1,6 +1,6 @@
 package com.nano.framework.wm
 
-import android.graphics.Rect
+import com.nano.framework.common.NanoRect
 import com.nano.framework.am.NanoActivityRecord
 
 /**
@@ -28,7 +28,7 @@ data class NanoWindowState(
     var isVisible: Boolean = true,
 
     /** 窗口位置和大小 */
-    val frame: Rect = Rect(),
+    val frame: NanoRect = NanoRect(),
 
     /** 创建时间 */
     val createTime: Long = System.currentTimeMillis()

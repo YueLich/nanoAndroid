@@ -1,6 +1,7 @@
 package com.nano.framework.pm
 
-import android.content.Context
+import com.nano.framework.common.NanoContext
+import com.nano.framework.common.DefaultNanoContext
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -11,12 +12,12 @@ import org.mockito.Mockito.mock
  */
 class NanoPackageManagerServiceTest {
 
-    private lateinit var context: Context
+    private lateinit var context: NanoContext
     private lateinit var packageManager: NanoPackageManagerService
 
     @Before
     fun setUp() {
-        context = mock(Context::class.java)
+        context = DefaultNanoContext()
         packageManager = NanoPackageManagerService(context)
     }
 

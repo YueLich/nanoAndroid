@@ -1,6 +1,5 @@
 package com.nano.app
 
-import android.app.Application
 import com.nano.app.context.NanoContext
 import com.nano.kernel.NanoLog
 import com.nano.kernel.handler.NanoLooper
@@ -8,9 +7,9 @@ import com.nano.kernel.handler.NanoLooper
 /**
  * NanoApplication - 应用基类
  *
- * 模拟 Android Application 的生命周期
+ * 纯 Kotlin 实现，不依赖 Android Application
  */
-abstract class NanoApplication : Application() {
+abstract class NanoApplication {
 
     companion object {
         private const val TAG = "NanoApplication"
@@ -25,14 +24,19 @@ abstract class NanoApplication : Application() {
         fun getInstance(): NanoApplication? = instance
     }
 
+    /** 应用包名 */
+    open val packageName: String = "com.nano.app"
+
     /** Application Context 包装 */
     private lateinit var nanoContext: ApplicationContext
 
     /**
      * Application Context 实现
      */
-    private inner class ApplicationContext(androidContext: Application) :
-        NanoContext(androidContext) {
+    private inner class ApplicationContext(val app: NanoApplication) :
+        NanoContext() {
+
+        override fun getPackageName(): String = app.packageName
 
         override fun onStartActivityFailed(intent: com.nano.app.intent.NanoIntent) {
             NanoLog.e(TAG, "Failed to start activity: $intent")
@@ -41,8 +45,10 @@ abstract class NanoApplication : Application() {
 
     // ==================== 生命周期 ====================
 
-    override fun onCreate() {
-        super.onCreate()
+    /**
+     * 创建应用
+     */
+    open fun onCreate() {
         instance = this
 
         NanoLog.i(TAG, "============================================")
@@ -65,11 +71,13 @@ abstract class NanoApplication : Application() {
         onNanoCreate()
     }
 
-    override fun onTerminate() {
+    /**
+     * 终止应用
+     */
+    open fun onTerminate() {
         NanoLog.i(TAG, "NanoApplication onTerminate: ${javaClass.simpleName}")
         onNanoTerminate()
         instance = null
-        super.onTerminate()
     }
 
     // ==================== Nano 生命周期（子类可重写） ====================

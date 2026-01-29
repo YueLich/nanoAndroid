@@ -1,7 +1,8 @@
 package com.nano.framework.wm
 
-import android.content.Context
-import android.graphics.Rect
+import com.nano.framework.common.NanoContext
+import com.nano.framework.common.DefaultNanoContext
+import com.nano.framework.common.NanoRect
 import com.nano.framework.am.NanoActivityManagerService
 import com.nano.framework.pm.NanoPackageManagerService
 import org.junit.Assert.*
@@ -14,14 +15,14 @@ import org.mockito.Mockito.mock
  */
 class NanoWindowManagerServiceTest {
 
-    private lateinit var context: Context
+    private lateinit var context: NanoContext
     private lateinit var packageManager: NanoPackageManagerService
     private lateinit var activityManager: NanoActivityManagerService
     private lateinit var windowManager: NanoWindowManagerService
 
     @Before
     fun setUp() {
-        context = mock(Context::class.java)
+        context = DefaultNanoContext()
         packageManager = NanoPackageManagerService(context)
         activityManager = NanoActivityManagerService(context, packageManager)
         windowManager = NanoWindowManagerService(context, activityManager)
@@ -32,7 +33,7 @@ class NanoWindowManagerServiceTest {
         val result = windowManager.addWindow(
             token = "window1",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         assertTrue(result)
@@ -47,13 +48,13 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             token = "window1",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         val result = windowManager.addWindow(
             token = "window1",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         assertFalse(result)
@@ -64,7 +65,7 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             token = "window1",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         val result = windowManager.removeWindow("window1")
@@ -85,10 +86,10 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             token = "window1",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
-        val newFrame = Rect(0, 0, 720, 1280)
+        val newFrame = NanoRect(0, 0, 720, 1280)
         val result = windowManager.updateWindowLayout("window1", newFrame)
         assertTrue(result)
 
@@ -104,7 +105,7 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             token = "window1",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         val result = windowManager.setWindowVisibility("window1", false)
@@ -120,13 +121,13 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             token = "window1",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         windowManager.addWindow(
             token = "window2",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         // window2 应该获得焦点
@@ -146,13 +147,13 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             token = "window1",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         windowManager.addWindow(
             token = "window2",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         val result = windowManager.setFocusedWindow("window1")
@@ -168,7 +169,7 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             token = "window1",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         windowManager.setWindowVisibility("window1", false)
@@ -182,19 +183,19 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             token = "app1",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         windowManager.addWindow(
             token = "app2",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 1080, 1920)
+            frame = NanoRect(0, 0, 1080, 1920)
         )
 
         windowManager.addWindow(
             token = "toast",
             type = NanoWindowState.WindowType.TYPE_TOAST,
-            frame = Rect(0, 0, 400, 100)
+            frame = NanoRect(0, 0, 400, 100)
         )
 
         val windows = windowManager.getAllWindows()
@@ -221,19 +222,19 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             "app1",
             NanoWindowState.WindowType.TYPE_APPLICATION,
-            Rect(0, 0, 1080, 1920)
+            NanoRect(0, 0, 1080, 1920)
         )
 
         windowManager.addWindow(
             "toast",
             NanoWindowState.WindowType.TYPE_TOAST,
-            Rect(0, 0, 400, 100)
+            NanoRect(0, 0, 400, 100)
         )
 
         windowManager.addWindow(
             "app2",
             NanoWindowState.WindowType.TYPE_APPLICATION,
-            Rect(0, 0, 1080, 1920)
+            NanoRect(0, 0, 1080, 1920)
         )
 
         val windows = windowManager.getAllWindows()
@@ -251,7 +252,7 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             "window1",
             NanoWindowState.WindowType.TYPE_APPLICATION,
-            Rect(0, 0, 500, 500)
+            NanoRect(0, 0, 500, 500)
         )
 
         val windows = windowManager.getAllWindows()
@@ -264,13 +265,13 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             "window1",
             NanoWindowState.WindowType.TYPE_APPLICATION,
-            Rect(0, 0, 500, 500)
+            NanoRect(0, 0, 500, 500)
         )
 
         windowManager.addWindow(
             "window2",
             NanoWindowState.WindowType.TYPE_APPLICATION,
-            Rect(250, 250, 750, 750)
+            NanoRect(250, 250, 750, 750)
         )
 
         windowManager.setWindowVisibility("window2", false)
@@ -286,7 +287,7 @@ class NanoWindowManagerServiceTest {
         val window = NanoWindowState(
             token = "test",
             type = NanoWindowState.WindowType.TYPE_APPLICATION,
-            frame = Rect(0, 0, 100, 100)
+            frame = NanoRect(0, 0, 100, 100)
         )
 
         assertTrue(window.isVisible)
@@ -301,13 +302,13 @@ class NanoWindowManagerServiceTest {
         windowManager.addWindow(
             "window1",
             NanoWindowState.WindowType.TYPE_APPLICATION,
-            Rect(0, 0, 1080, 1920)
+            NanoRect(0, 0, 1080, 1920)
         )
 
         windowManager.addWindow(
             "window2",
             NanoWindowState.WindowType.TYPE_APPLICATION,
-            Rect(0, 0, 1080, 1920)
+            NanoRect(0, 0, 1080, 1920)
         )
 
         // window2 应该有焦点
