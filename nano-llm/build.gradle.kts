@@ -8,9 +8,6 @@ java {
     targetCompatibility = JavaVersion.VERSION_17
 }
 
-kotlin {
-    jvmToolchain(17)
-}
 
 dependencies {
     // NanoAndroid 模块依赖
