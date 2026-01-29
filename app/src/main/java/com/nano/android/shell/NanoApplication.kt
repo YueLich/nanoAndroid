@@ -42,10 +42,13 @@ class NanoApplication : Application() {
         super.onCreate()
         instance = this
 
+        // 配置 NanoLog 使用 Android Log
+        NanoLog.setLogOutput(AndroidLogOutput())
+
         NanoLog.i(TAG, "============================================")
         NanoLog.i(TAG, "NanoAndroid starting...")
         NanoLog.i(TAG, "============================================")
-        
+
         // Prepare main looper
         NanoLooper.prepareMainLooper()
 
@@ -65,8 +68,9 @@ class NanoApplication : Application() {
     private fun initializeSystemServer() {
         NanoLog.i(TAG, "Initializing NanoSystemServer...")
 
-        // 1. 创建系统服务器
-        systemServer = NanoSystemServer(this)
+        // 1. 创建系统服务器（使用 Android 桥接的 NanoContext）
+        val nanoContext = AndroidNanoContext(this)
+        systemServer = NanoSystemServer(nanoContext)
 
         // 2. 注册 LLM 服务工厂（避免 nano-framework 循环依赖）
         systemServer.registerExternalService(NanoSystemServer.LLM_SERVICE) {
