@@ -19,8 +19,14 @@ import com.nano.view.widget.NanoTextView
  *
  * 将 nano-view 框架的 NanoView 转换为标准 Android View
  * 支持递归处理 NanoViewGroup 的子视图
+ *
+ * @param context Android Context
+ * @param onA2UIActionListener A2UI 动作监听器（可选），用于处理 A2UI 按钮点击事件
  */
-class NanoViewConverter(private val context: Context) {
+class NanoViewConverter(
+    private val context: Context,
+    private val onA2UIActionListener: ((String) -> Unit)? = null
+) {
 
     companion object {
         private const val TAG = "NanoViewConverter"
@@ -103,6 +109,10 @@ class NanoViewConverter(private val context: Context) {
             setOnClickListener {
                 // 触发 NanoView 的点击事件
                 nano.performClick()
+
+                // 如果有 A2UI 动作监听器，则触发回调
+                // 使用按钮文本作为动作字符串
+                onA2UIActionListener?.invoke(nano.text)
             }
 
             // 设置背景颜色（如果有）
@@ -201,6 +211,9 @@ class NanoViewConverter(private val context: Context) {
             if (nano.isClickable) {
                 setOnClickListener {
                     nano.performClick()
+
+                    // 如果有 A2UI 动作监听器，则触发回调
+                    onA2UIActionListener?.invoke("click")
                 }
             }
         }

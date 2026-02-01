@@ -2,110 +2,67 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:orientation="vertical">
 
-    <!-- 标题 -->
-    <TextView
+    <!-- A2UI 渲染容器（上方 - 主要交互界面）-->
+    <FrameLayout
+        android:id="@+id/containerA2UI"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="NanoAndroid Shell"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:paddingBottom="16dp" />
+        android:layout_height="0dp"
+        android:layout_weight="0.5"
+        android:background="#FFFFFF"
+        android:padding="16dp"
+        android:visibility="gone" />
 
-    <!-- 系统状态 -->
-    <TextView
-        android:id="@+id/tvSystemStatus"
+    <!-- 聊天消息列表容器（中间 - 对话历史）-->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerChat"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="System Status: Initializing..."
-        android:textSize="14sp"
+        android:layout_height="0dp"
+        android:layout_weight="0.5"
+        android:background="#FAFAFA"
+        android:clipToPadding="false"
+        android:paddingTop="8dp"
         android:paddingBottom="8dp" />
-
-    <!-- 注册的 Agents -->
-    <TextView
-        android:id="@+id/tvAgents"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Agents: Loading..."
-        android:textSize="14sp"
-        android:paddingBottom="16dp" />
 
     <!-- 分隔线 -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#CCCCCC"
-        android:layout_marginVertical="8dp" />
+        android:background="#E0E0E0" />
 
-    <!-- 输入区域 -->
-    <TextView
+    <!-- 输入区域（底部）-->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Natural Language Input:"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:paddingBottom="8dp" />
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:background="#FFFFFF"
+        android:elevation="4dp">
 
-    <EditText
-        android:id="@+id/etUserInput"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Try: 计算 2 + 3, 新增笔记"
-        android:minHeight="48dp"
-        android:paddingHorizontal="12dp" />
-
-    <Button
-        android:id="@+id/btnProcess"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Process Input"
-        android:layout_marginTop="8dp" />
-
-    <!-- 响应区域 -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Response:"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:paddingTop="16dp"
-        android:paddingBottom="8dp" />
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- 输入框 -->
+        <EditText
+            android:id="@+id/etUserInput"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_weight="1"
+            android:hint="输入消息..."
+            android:minHeight="48dp"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp"
+            android:background="@drawable/bg_input"
+            android:maxLines="4"
+            android:scrollbars="vertical" />
 
-            <!-- 文本响应 -->
-            <TextView
-                android:id="@+id/tvResponse"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="(No response yet)"
-                android:textSize="14sp"
-                android:padding="12dp"
-                android:background="#F5F5F5" />
+        <!-- 发送按钮 -->
+        <Button
+            android:id="@+id/btnSend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="发送"
+            android:minWidth="72dp" />
 
-            <!-- A2UI 渲染容器 -->
-            <FrameLayout
-                android:id="@+id/a2uiContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:padding="16dp"
-                android:background="#FFFFFF"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
-    </ScrollView>
+    </LinearLayout>
 
 </LinearLayout>
