@@ -135,6 +135,71 @@ object LLMProviderFactory {
                 "preferredLayout": "UNIFIED_LIST",
                 "needsClarification": false
             }
+            """.trimIndent(),
+
+            // 航班查询（缺少参数） → 需要澄清
+            "查询航班" to """
+            {
+                "intentType": "APP_SEARCH",
+                "targetApps": [],
+                "broadcastCapability": "SEARCH",
+                "action": "search_flight",
+                "entities": {},
+                "confidence": 0.6,
+                "coordinationStrategy": "PARALLEL",
+                "preferredLayout": "UNIFIED_LIST",
+                "needsClarification": true,
+                "clarificationQuestion": "好的，我可以帮您查询航班。请告诉我：\n1. 出发城市\n2. 到达城市\n3. 出发日期（如：明天、2026-02-03）"
+            }
+            """.trimIndent(),
+
+            "航班" to """
+            {
+                "intentType": "APP_SEARCH",
+                "targetApps": [],
+                "broadcastCapability": "SEARCH",
+                "action": "search_flight",
+                "entities": {},
+                "confidence": 0.6,
+                "coordinationStrategy": "PARALLEL",
+                "preferredLayout": "UNIFIED_LIST",
+                "needsClarification": true,
+                "clarificationQuestion": "好的，我可以帮您查询航班。请告诉我：\n1. 出发城市\n2. 到达城市\n3. 出发日期（如：明天、2026-02-03）"
+            }
+            """.trimIndent(),
+
+            // 航班查询（完整参数） → 直接查询
+            "北京到上海" to """
+            {
+                "intentType": "APP_SEARCH",
+                "targetApps": [],
+                "broadcastCapability": "SEARCH",
+                "action": "search_flight",
+                "entities": {
+                    "departure": "北京",
+                    "arrival": "上海",
+                    "date": "2026-02-03"
+                },
+                "confidence": 0.95,
+                "coordinationStrategy": "PARALLEL",
+                "preferredLayout": "UNIFIED_LIST",
+                "needsClarification": false
+            }
+            """.trimIndent(),
+
+            "机票" to """
+            {
+                "intentType": "APP_SEARCH",
+                "targetApps": [],
+                "broadcastCapability": "SEARCH",
+                "action": "search_flight",
+                "entities": {},
+                "confidence": 0.6,
+                "coordinationStrategy": "PARALLEL",
+                "preferredLayout": "UNIFIED_LIST",
+                "needsClarification": true,
+                "clarificationQuestion": "好的，我可以帮您查询机票。请告诉我：\n1. 出发城市\n2. 到达城市\n3. 出发日期（如：明天、2026-02-03）"
+            }
             """.trimIndent()
         )
 
@@ -149,7 +214,7 @@ object LLMProviderFactory {
             "coordinationStrategy": "FALLBACK",
             "preferredLayout": "UNIFIED_LIST",
             "needsClarification": true,
-            "clarificationQuestion": "我可以帮你计算数学表达式或管理笔记。请试试：'计算 2 + 3' 或 '新增笔记'"
+            "clarificationQuestion": "我可以帮你：\n• 计算数学表达式 - 试试：'计算 2 + 3'\n• 管理笔记 - 试试：'新增笔记'\n• 查询航班 - 试试：'查询北京到上海的航班'"
         }
         """.trimIndent()
 
