@@ -82,12 +82,28 @@ class OpenAIProvider(private val config: LLMConfig) : LLMProvider {
         )
 
         val body = json.encodeToString(ApiRequest.serializer(), apiRequest)
-        val httpRequest = Request.Builder()
-            .url("$baseUrl/v1/chat/completions")
+
+        // 构建请求URL - 如果baseUrl已经包含/v1，则不再添加
+        val apiUrl = if (baseUrl.endsWith("/v1")) {
+            "$baseUrl/chat/completions"
+        } else {
+            "$baseUrl/v1/chat/completions"
+        }
+
+        val requestBuilder = Request.Builder()
+            .url(apiUrl)
             .header("Authorization", "Bearer ${config.apiKey}")
             .header("Content-Type", "application/json")
             .post(body.toRequestBody("application/json".toMediaType()))
-            .build()
+
+        // OpenRouter 需要额外的 headers
+        if (baseUrl.contains("openrouter")) {
+            requestBuilder
+                .header("HTTP-Referer", "https://github.com/nanoandroid")
+                .header("X-Title", "NanoAndroid")
+        }
+
+        val httpRequest = requestBuilder.build()
 
         val response = client.newCall(httpRequest).execute()
         if (!response.isSuccessful) {
