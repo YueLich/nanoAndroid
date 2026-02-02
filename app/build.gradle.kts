@@ -19,7 +19,7 @@ android {
         // LLM 配置（从 gradle.properties 或环境变量读取）
         buildConfigField("String", "LLM_PROVIDER", "\"openrouter\"")
         buildConfigField("String", "LLM_API_KEY", "\"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\"")
-        buildConfigField("String", "LLM_MODEL", "\"google/gemini-2.0-flash-exp:free\"")
+        buildConfigField("String", "LLM_MODEL", "\"arcee-ai/trinity-large-preview:free\"")
         buildConfigField("String", "LLM_BASE_URL", "\"https://openrouter.ai/api\"")
     }
 

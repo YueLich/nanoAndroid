@@ -1,7 +1,13 @@
 package com.nano.llm.agent
 
+import com.nano.kernel.NanoLog
 import com.nano.llm.a2ui.*
 import com.nano.llm.intent.IntentUnderstanding
+import com.nano.llm.intent.IntentType
+import com.nano.llm.model.LLMMessage
+import com.nano.llm.model.LLMRequest
+import com.nano.llm.model.MessageRole
+import com.nano.llm.provider.LLMProvider
 
 /** System Agent 响应 */
 data class SystemAgentResponse(
@@ -20,12 +26,18 @@ data class SystemAgentResponse(
  * 2. 协调执行
  * 3. 响应聚合
  * 4. 构建最终响应
+ * 5. 处理通用对话（GENERAL_CHAT）
  */
 class SystemAgent(
     private val agentRegistry: AgentRegistry,
     private val agentCoordinator: AgentCoordinator,
-    private val responseAggregator: ResponseAggregator
+    private val responseAggregator: ResponseAggregator,
+    private val llmProvider: LLMProvider
 ) {
+
+    companion object {
+        private const val TAG = "SystemAgent"
+    }
 
     /**
      * 处理意图理解结果 - 核心入口
@@ -39,6 +51,13 @@ class SystemAgent(
         // 1. 选择匹配的 Agent
         val selectedAgents = selectAgents(understanding)
 
+        // 2. 如果是通用对话且没有找到 Agent，由 SystemAgent 直接处理
+        if (selectedAgents.isEmpty() && understanding.intentType == IntentType.GENERAL_CHAT) {
+            NanoLog.i(TAG, "No agent found, handling GENERAL_CHAT directly")
+            return handleGeneralChat(context.userQuery)
+        }
+
+        // 3. 如果找不到任何 Agent，返回错误
         if (selectedAgents.isEmpty()) {
             return SystemAgentResponse(
                 message = "抱歉，没有找到能处理此请求的应用",
@@ -46,21 +65,70 @@ class SystemAgent(
             )
         }
 
-        // 2. 协调执行
+        // 4. 协调执行
         val responses = agentCoordinator.coordinate(
             agents = selectedAgents,
             understanding = understanding,
             context = context
         )
 
-        // 3. 响应聚合
+        // 5. 响应聚合
         val aggregated = responseAggregator.aggregate(
             responses = responses,
             understanding = understanding
         )
 
-        // 4. 构建最终响应
+        // 6. 构建最终响应
         return buildFinalResponse(aggregated)
+    }
+
+    /**
+     * 处理通用对话 - 直接调用 LLM 生成回复
+     */
+    private suspend fun handleGeneralChat(userInput: String): SystemAgentResponse {
+        return try {
+            if (!llmProvider.isAvailable) {
+                return SystemAgentResponse(
+                    message = "你好！我是 NanoAndroid 助手。目前 LLM 服务未配置，我可以帮你使用计算器、笔记本等应用。",
+                    conversationState = TaskStatus.SUCCESS,
+                    followUpSuggestions = listOf("计算 2 + 3", "新增笔记")
+                )
+            }
+
+            val messages = listOf(
+                LLMMessage(
+                    role = MessageRole.SYSTEM,
+                    content = """你是 NanoAndroid 的智能助手，可以用简短友好的方式与用户聊天。
+                    |如果用户询问功能，告诉他们你可以帮助使用计算器、笔记本、查询航班等应用。
+                    |回复要简洁，不超过 50 字。""".trimMargin()
+                ),
+                LLMMessage(
+                    role = MessageRole.USER,
+                    content = userInput
+                )
+            )
+
+            val response = llmProvider.generate(
+                LLMRequest(
+                    messages = messages,
+                    temperature = 0.7f,
+                    maxTokens = 100
+                )
+            )
+
+            SystemAgentResponse(
+                message = response.content,
+                conversationState = TaskStatus.SUCCESS,
+                participatingAgents = listOf("system")
+            )
+        } catch (e: Exception) {
+            NanoLog.e(TAG, "Error in handleGeneralChat: ${e.message}", e)
+            SystemAgentResponse(
+                message = "你好！我是 NanoAndroid 助手，我可以帮你使用计算器、笔记本、查询航班等功能。",
+                conversationState = TaskStatus.SUCCESS,
+                followUpSuggestions = listOf("计算 2 + 3", "新增笔记", "查询航班")
+            )
+        }
     }
 
     /**

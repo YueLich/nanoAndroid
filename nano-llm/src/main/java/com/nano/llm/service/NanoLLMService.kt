@@ -95,7 +95,12 @@ class NanoLLMService(
 
         naturalLanguageAPI = NaturalLanguageAPI(
             agentRegistry = agentRegistry,
-            systemAgent = SystemAgent(agentRegistry, AgentCoordinator(), ResponseAggregator()),
+            systemAgent = SystemAgent(
+                agentRegistry = agentRegistry,
+                agentCoordinator = AgentCoordinator(),
+                responseAggregator = ResponseAggregator(),
+                llmProvider = provider
+            ),
             intentParser = intentParser
         )
 
