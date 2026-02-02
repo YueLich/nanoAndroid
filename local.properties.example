@@ -1,0 +1,106 @@
+## This file is a template for local.properties
+# Copy this file to local.properties and fill in your configuration
+#
+# Location of the SDK. This is only used by Gradle.
+sdk.dir=/path/to/android/sdk
+
+# ============================================
+# LLM Configuration (NanoAndroid 大模型配置)
+# ============================================
+#
+# 配置说明：https://github.com/yourusername/nanoAndroid/blob/main/docs/LLM_CONFIG.md
+#
+# 快速开始：
+# 1. 复制此文件为 local.properties
+# 2. 设置 sdk.dir 为你的 Android SDK 路径
+# 3. 选择一个 provider (推荐 openrouter，有免费模型)
+# 4. 填写对应的 API Key
+# 5. 重新构建项目: ./gradlew :app:installDebug
+
+# Provider 选择 (可选值: openai, claude, groq, openrouter, together, local, mock)
+# - openrouter: 推荐！支持多种模型，有免费选项
+# - groq: 推理速度快，免费额度大
+# - openai: 官方 GPT 模型
+# - claude: Anthropic Claude 模型
+# - together: Together AI 平台
+# - mock: 模拟模式，无需 API Key，用于测试
+# - local: 本地模型 (需自建服务)
+llm.provider=openrouter
+
+# API Key (必须填写，否则无法调用真实大模型)
+# 如何获取 API Key：
+# - OpenRouter: https://openrouter.ai/keys
+# - OpenAI: https://platform.openai.com/api-keys
+# - Claude: https://console.anthropic.com/settings/keys
+# - Groq: https://console.groq.com/keys
+llm.apiKey=YOUR_API_KEY_HERE
+
+# Model (可选，不填则使用默认模型)
+# OpenRouter 免费模型推荐:
+#   - google/gemini-2.0-flash-exp:free (免费，速度快)
+#   - meta-llama/llama-3.1-8b-instruct:free (免费)
+#   - microsoft/phi-3-mini-128k-instruct:free (免费)
+#
+# OpenAI 模型:
+#   - gpt-4o-mini (便宜)
+#   - gpt-4o (强大)
+#
+# Claude 模型:
+#   - claude-3-5-sonnet-20241022 (推荐)
+#   - claude-3-haiku-20240307 (便宜)
+#
+# Groq 模型:
+#   - mixtral-8x7b-32768 (免费，速度极快)
+#   - llama-3.1-70b-versatile (免费)
+llm.model=google/gemini-2.0-flash-exp:free
+
+# Base URL (可选，不填则使用默认地址)
+# 通常不需要修改，除非使用代理或自建服务
+#
+# 默认值：
+# - OpenRouter: https://openrouter.ai/api/v1
+# - OpenAI: https://api.openai.com/v1
+# - Claude: https://api.anthropic.com/v1
+# - Groq: https://api.groq.com/openai/v1
+# - Together: https://api.together.xyz/v1
+llm.baseUrl=
+
+# ============================================
+# 常见配置示例
+# ============================================
+
+# 示例 1: OpenRouter + Gemini 2.0 Flash (免费，推荐新手)
+# llm.provider=openrouter
+# llm.apiKey=sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# llm.model=google/gemini-2.0-flash-exp:free
+# llm.baseUrl=https://openrouter.ai/api/v1
+
+# 示例 2: Groq + Mixtral (免费，速度快)
+# llm.provider=groq
+# llm.apiKey=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# llm.model=mixtral-8x7b-32768
+# llm.baseUrl=
+
+# 示例 3: OpenAI GPT-4o-mini
+# llm.provider=openai
+# llm.apiKey=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# llm.model=gpt-4o-mini
+# llm.baseUrl=
+
+# 示例 4: Claude Sonnet
+# llm.provider=claude
+# llm.apiKey=sk-ant-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# llm.model=claude-3-5-sonnet-20241022
+# llm.baseUrl=
+
+# 示例 5: 本地模型 (需要自建 OpenAI 兼容服务)
+# llm.provider=local
+# llm.apiKey=not-needed
+# llm.model=your-model-name
+# llm.baseUrl=http://localhost:11434/v1
+
+# 示例 6: 测试模式 (无需 API Key，返回模拟响应)
+# llm.provider=mock
+# llm.apiKey=
+# llm.model=
+# llm.baseUrl=

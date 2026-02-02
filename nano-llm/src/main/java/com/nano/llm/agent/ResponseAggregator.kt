@@ -31,6 +31,20 @@ data class AggregatedResponse(
     val failedAgents: List<String>
 )
 
+/** 航班项（用于去重和排序） */
+private data class FlightItem(
+    val flightNumber: String,
+    val airline: String,
+    val departureAirport: String,
+    val arrivalAirport: String,
+    val departureTime: String,
+    val arrivalTime: String,
+    val price: Double,
+    val cabinClass: String,
+    val source: String,
+    val sources: List<String> = listOf(source)
+)
+
 /**
  * 响应聚合器 - 合并多个 Agent 的响应
  *
@@ -86,6 +100,14 @@ class ResponseAggregator {
     fun mergeData(
         rawResponses: List<Pair<ResponseData, String>>
     ): MergedResponseData {
+        // 检查是否为航班数据
+        val isFlightData = rawResponses.firstOrNull()?.first?.type == "flights"
+
+        if (isFlightData) {
+            return mergeFlightData(rawResponses)
+        }
+
+        // 通用数据合并逻辑
         val allItems = rawResponses.flatMap { (data, agentId) ->
             data.items.map { item ->
                 MergedItem(
@@ -111,6 +133,69 @@ class ResponseAggregator {
             items = deduped,
             totalCount = allItems.size,
             uniqueCount = deduped.size,
+            sources = rawResponses.map { it.second }.distinct()
+        )
+    }
+
+    /**
+     * 合并航班数据（去重 + 排序）
+     */
+    private fun mergeFlightData(
+        rawResponses: List<Pair<ResponseData, String>>
+    ): MergedResponseData {
+        // 1. 提取所有航班
+        val allFlights = rawResponses.flatMap { (data, agentId) ->
+            data.items.map { item ->
+                FlightItem(
+                    flightNumber = item["flight_number"] ?: "",
+                    airline = item["airline"] ?: "",
+                    departureAirport = item["departure_airport"] ?: "",
+                    arrivalAirport = item["arrival_airport"] ?: "",
+                    departureTime = item["departure_time"] ?: "",
+                    arrivalTime = item["arrival_time"] ?: "",
+                    price = item["price"]?.toDoubleOrNull() ?: 0.0,
+                    cabinClass = item["cabin_class"] ?: "经济舱",
+                    source = agentId
+                )
+            }
+        }
+
+        // 2. 按航班号去重，合并来源
+        val dedupedFlights = allFlights
+            .groupBy { it.flightNumber }
+            .map { (_, items) ->
+                // 使用价格最低的那个
+                val cheapest = items.minByOrNull { it.price } ?: items.first()
+                cheapest.copy(
+                    sources = items.map { it.source }.distinct()
+                )
+            }
+
+        // 3. 按价格排序
+        val sortedFlights = dedupedFlights.sortedBy { it.price }
+
+        // 4. 转换为 MergedItem 格式
+        val mergedItems = sortedFlights.map { flight ->
+            MergedItem(
+                data = mapOf(
+                    "flight_number" to flight.flightNumber,
+                    "airline" to flight.airline,
+                    "departure_airport" to flight.departureAirport,
+                    "arrival_airport" to flight.arrivalAirport,
+                    "departure_time" to flight.departureTime,
+                    "arrival_time" to flight.arrivalTime,
+                    "price" to flight.price.toString(),
+                    "cabin_class" to flight.cabinClass
+                ),
+                sources = flight.sources,
+                key = flight.flightNumber
+            )
+        }
+
+        return MergedResponseData(
+            items = mergedItems,
+            totalCount = allFlights.size,
+            uniqueCount = sortedFlights.size,
             sources = rawResponses.map { it.second }.distinct()
         )
     }

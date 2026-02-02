@@ -11,6 +11,9 @@ import com.nano.llm.model.ProviderType
 import com.nano.llm.service.NanoLLMService
 import com.nano.sample.calculator.CalculatorAgent
 import com.nano.sample.notepad.NotepadAgent
+import com.nano.sample.flight.CtripAgent
+import com.nano.sample.flight.ChinaSouthernAgent
+import com.nano.sample.web.WebAgent
 
 /**
  * NanoAndroid 应用入口
@@ -163,7 +166,7 @@ class NanoApplication : Application() {
 
         NanoLog.i(TAG, "============================================")
         NanoLog.i(TAG, "NanoAndroid fully initialized ✓")
-        NanoLog.i(TAG, "Registered Agents: Calculator, Notepad")
+        NanoLog.i(TAG, "Registered Agents: Calculator, Notepad, Ctrip, ChinaSouthern, WebAgent")
         NanoLog.i(TAG, "============================================")
     }
 
@@ -171,15 +174,43 @@ class NanoApplication : Application() {
      * 注册示例 Agents
      */
     private fun registerSampleAgents() {
-        // 注册计算器 Agent
-        val calculatorAgent = CalculatorAgent()
-        llmService.registerAgent(calculatorAgent)
-        NanoLog.i(TAG, "Registered CalculatorAgent: ${calculatorAgent.agentId}")
+        try {
+            // 1. 注册计算器 Agent
+            val calculatorAgent = CalculatorAgent()
+            llmService.registerAgent(calculatorAgent)
+            NanoLog.i(TAG, "✓ Registered CalculatorAgent: ${calculatorAgent.agentId}")
 
-        // 注册笔记本 Agent
-        val notepadAgent = NotepadAgent()
-        llmService.registerAgent(notepadAgent)
-        NanoLog.i(TAG, "Registered NotepadAgent: ${notepadAgent.agentId}")
+            // 2. 注册笔记本 Agent
+            val notepadAgent = NotepadAgent()
+            llmService.registerAgent(notepadAgent)
+            NanoLog.i(TAG, "✓ Registered NotepadAgent: ${notepadAgent.agentId}")
+
+            // 3. 注册携程 Agent
+            val ctripAgent = CtripAgent()
+            llmService.registerAgent(ctripAgent)
+            NanoLog.i(TAG, "✓ Registered CtripAgent: ${ctripAgent.agentId}")
+
+            // 4. 注册南方航空 Agent
+            val chinaSouthernAgent = ChinaSouthernAgent()
+            llmService.registerAgent(chinaSouthernAgent)
+            NanoLog.i(TAG, "✓ Registered ChinaSouthernAgent: ${chinaSouthernAgent.agentId}")
+
+            // 5. 注册网页浏览器 Agent
+            val webAgent = WebAgent()
+            llmService.registerAgent(webAgent)
+            NanoLog.i(TAG, "✓ Registered WebAgent: ${webAgent.agentId}")
+
+            // 记录已注册的 Agent 能力
+            NanoLog.i(TAG, "✓ Agent Capabilities:")
+            NanoLog.i(TAG, "  - calculator: calculate")
+            NanoLog.i(TAG, "  - notepad: add_note, list_notes, view_note, edit_note, delete_note")
+            NanoLog.i(TAG, "  - ctrip: search_flight, book_flight")
+            NanoLog.i(TAG, "  - china_southern: search_flight, book_flight")
+            NanoLog.i(TAG, "  - web_agent: search_flight, navigate_web, extract_data")
+
+        } catch (e: Exception) {
+            NanoLog.e(TAG, "Failed to register sample agents", e)
+        }
     }
 
     override fun onTerminate() {

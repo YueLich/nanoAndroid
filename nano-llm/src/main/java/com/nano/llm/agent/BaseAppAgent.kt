@@ -1,6 +1,7 @@
 package com.nano.llm.agent
 
 import com.nano.llm.a2ui.A2UIAction
+import com.nano.llm.provider.LLMProvider
 
 /**
  * App Agent 基类 - 提供通用实现
@@ -9,6 +10,46 @@ abstract class BaseAppAgent(
     override val agentId: String,
     override val agentName: String
 ) : AppAgent {
+
+    /**
+     * LLM Provider 实例
+     *
+     * Agent 注册到 LLMService 时自动注入。
+     * Agent 可以调用此 provider 执行 LLM 推理任务，如：
+     * - 生成文本摘要
+     * - 提取关键信息
+     * - 智能回复
+     * - 内容理解
+     *
+     * 使用示例：
+     * ```kotlin
+     * val response = llmProvider?.generate(
+     *     LLMRequest(
+     *         messages = listOf(
+     *             LLMMessage(role = MessageRole.USER, content = "总结这段文本...")
+     *         )
+     *     )
+     * )
+     * ```
+     */
+    protected var llmProvider: LLMProvider? = null
+        private set
+
+    /**
+     * 设置 LLM Provider（由 LLMService 调用）
+     *
+     * @param provider LLM 提供商实例
+     */
+    fun setLLMProvider(provider: LLMProvider) {
+        this.llmProvider = provider
+    }
+
+    /**
+     * 检查 LLM 是否可用
+     */
+    protected fun isLLMAvailable(): Boolean {
+        return llmProvider?.isAvailable == true
+    }
 
     override suspend fun handleRequest(request: AgentMessage): TaskResponsePayload {
         return when (request.type) {

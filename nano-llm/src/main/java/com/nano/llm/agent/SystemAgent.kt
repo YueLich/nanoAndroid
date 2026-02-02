@@ -1,6 +1,6 @@
 package com.nano.llm.agent
 
-import com.nano.llm.a2ui.A2UISpec
+import com.nano.llm.a2ui.*
 import com.nano.llm.intent.IntentUnderstanding
 
 /** System Agent 响应 */
@@ -105,6 +105,10 @@ class SystemAgent(
                 // 多个 A2UI 需要合并 (后续由 A2UIGenerator 处理)
                 aggregated.a2uiResponses.first().first
             }
+            // 如果没有 A2UI 响应但有合并的数据，尝试生成 A2UI
+            aggregated.mergedData != null -> {
+                generateA2UIFromMergedData(aggregated.mergedData)
+            }
             else -> null
         }
 
@@ -115,5 +119,140 @@ class SystemAgent(
             followUpSuggestions = aggregated.allFollowUpActions.map { it.label },
             participatingAgents = aggregated.participatingAgents
         )
+    }
+
+    /**
+     * 从合并的数据生成 A2UI
+     */
+    private fun generateA2UIFromMergedData(mergedData: MergedResponseData): A2UISpec? {
+        // 检查是否为航班数据（通过检查第一个项目的键来判断）
+        val isFlightData = mergedData.items.firstOrNull()?.data?.containsKey("flight_number") == true
+
+        return if (isFlightData) {
+            generateFlightListA2UI(mergedData)
+        } else {
+            // 其他数据类型的通用 A2UI 生成
+            generateGenericListA2UI(mergedData)
+        }
+    }
+
+    /**
+     * 为航班数据生成统一的 A2UI
+     */
+    private fun generateFlightListA2UI(mergedData: MergedResponseData): A2UISpec {
+        val flightCards = mergedData.items.map { item ->
+            createFlightCard(item)
+        }
+
+        val root = A2UIContainer(
+            id = "flight_list_container",
+            direction = Direction.VERTICAL,
+            style = A2UIStyle(
+                padding = Spacing(16, 16, 16, 16)
+            ),
+            children = listOf(
+                // 标题栏
+                A2UIText(
+                    text = "✈️ 航班查询结果 (共${mergedData.uniqueCount}个)",
+                    textStyle = TextStyle(fontSize = 20, fontWeight = FontWeight.BOLD)
+                )
+            ) + flightCards
+        )
+
+        return A2UISpec(version = "1.0", root = root)
+    }
+
+    /**
+     * 创建航班卡片
+     */
+    private fun createFlightCard(item: MergedItem): A2UICard {
+        val data = item.data
+        val flightNumber = data["flight_number"] ?: ""
+        val airline = data["airline"] ?: ""
+        val departureAirport = data["departure_airport"] ?: ""
+        val arrivalAirport = data["arrival_airport"] ?: ""
+        val departureTime = data["departure_time"]?.substringAfter("T")?.substring(0, 5) ?: ""
+        val arrivalTime = data["arrival_time"]?.substringAfter("T")?.substring(0, 5) ?: ""
+        val price = data["price"] ?: ""
+        val sources = item.sources.joinToString(", ")
+
+        return A2UICard(
+            id = "flight_card_$flightNumber",
+            style = A2UIStyle(
+                margin = Spacing(8, 0, 8, 0),
+                backgroundColor = "#F5F5F5",
+                borderRadius = 8
+            ),
+            content = A2UIContainer(
+                direction = Direction.HORIZONTAL,
+                children = listOf(
+                    // 左侧：航班信息
+                    A2UIContainer(
+                        direction = Direction.VERTICAL,
+                        style = A2UIStyle(width = 0, padding = Spacing(12, 12, 12, 12)),
+                        children = listOf(
+                            A2UIText(
+                                text = "$flightNumber $airline",
+                                textStyle = TextStyle(fontSize = 16, fontWeight = FontWeight.BOLD)
+                            ),
+                            A2UIText(
+                                text = "$departureAirport → $arrivalAirport",
+                                textStyle = TextStyle(fontSize = 14)
+                            ),
+                            A2UIText(
+                                text = "$departureTime - $arrivalTime",
+                                textStyle = TextStyle(fontSize = 14, color = "#666666")
+                            )
+                        )
+                    ),
+                    // 右侧：价格和按钮
+                    A2UIContainer(
+                        direction = Direction.VERTICAL,
+                        style = A2UIStyle(padding = Spacing(12, 12, 12, 12)),
+                        children = listOf(
+                            A2UIText(
+                                text = "¥$price",
+                                textStyle = TextStyle(fontSize = 18, fontWeight = FontWeight.BOLD, color = "#FF5722")
+                            ),
+                            A2UIText(
+                                text = "来源: $sources",
+                                textStyle = TextStyle(fontSize = 12, color = "#999999")
+                            ),
+                            A2UIButton(
+                                text = "预订",
+                                action = A2UIAction(
+                                    type = ActionType.AGENT_CALL,
+                                    target = "ctrip", // 默认使用携程预订
+                                    method = "book_flight",
+                                    params = mapOf("flight_number" to flightNumber)
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    }
+
+    /**
+     * 为通用数据生成列表 A2UI
+     */
+    private fun generateGenericListA2UI(mergedData: MergedResponseData): A2UISpec {
+        val listItems = mergedData.items.map { item ->
+            A2UIListItem(
+                id = item.key,
+                title = item.data["name"] ?: item.data["title"] ?: item.key,
+                subtitle = item.data["description"] ?: "",
+                trailing = item.sources.joinToString(", "),
+                data = item.data
+            )
+        }
+
+        val root = A2UIList(
+            id = "generic_list",
+            items = listItems
+        )
+
+        return A2UISpec(version = "1.0", root = root)
     }
 }

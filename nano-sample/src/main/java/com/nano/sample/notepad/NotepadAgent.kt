@@ -2,6 +2,9 @@ package com.nano.sample.notepad
 
 import com.nano.llm.agent.*
 import com.nano.llm.a2ui.*
+import com.nano.llm.model.LLMMessage
+import com.nano.llm.model.LLMRequest
+import com.nano.llm.model.MessageRole
 
 data class Note(
     val id: String,
@@ -20,9 +23,9 @@ class NotepadAgent : BaseAppAgent("notepad", "笔记本") {
 
     override fun describeCapabilities() = AgentCapabilityDescription(
         agentId = agentId,
-        supportedIntents = listOf("add_note", "edit_note", "delete_note", "list_notes", "search_notes"),
+        supportedIntents = listOf("add_note", "edit_note", "delete_note", "list_notes", "search_notes", "summarize_note"),
         supportedEntities = listOf("note_id", "title", "content", "keyword"),
-        exampleQueries = listOf("新增笔记", "查看所有笔记", "删除笔记", "搜索笔记"),
+        exampleQueries = listOf("新增笔记", "查看所有笔记", "删除笔记", "搜索笔记", "总结笔记"),
         responseTypes = setOf(ResponseType.A2UI_JSON)
     )
 
@@ -44,6 +47,9 @@ class NotepadAgent : BaseAppAgent("notepad", "笔记本") {
             )
             "search_notes" -> searchNotes(
                 keyword = request.entities["keyword"] ?: ""
+            )
+            "summarize_note" -> summarizeNote(
+                noteId = request.entities["note_id"] ?: return notFoundResponse()
             )
             else -> listNotes()
         }
@@ -159,6 +165,89 @@ class NotepadAgent : BaseAppAgent("notepad", "笔记本") {
 
     fun getNoteCount(): Int = notes.size
 
+    /**
+     * 智能摘要功能 - 使用 LLM 生成笔记摘要
+     *
+     * 展示 Agent 如何调用 LLM：
+     * 1. 检查 LLM 是否可用
+     * 2. 构建 LLM 请求（System Prompt + User Input）
+     * 3. 调用 llmProvider.generate()
+     * 4. 处理响应并返回结果
+     */
+    suspend fun summarizeNote(noteId: String): TaskResponsePayload {
+        val note = notes[noteId] ?: return notFoundResponse()
+
+        // 如果笔记内容太短，不需要摘要
+        if (note.content.length < 50) {
+            return TaskResponsePayload(
+                status = TaskStatus.SUCCESS,
+                message = "笔记内容过短，无需摘要",
+                data = ResponseData(
+                    type = "note_summary",
+                    items = listOf(
+                        mapOf(
+                            "note_id" to note.id,
+                            "title" to note.title,
+                            "summary" to note.content
+                        )
+                    )
+                )
+            )
+        }
+
+        // 检查 LLM 是否可用
+        if (!isLLMAvailable()) {
+            return TaskResponsePayload(
+                status = TaskStatus.FAILED,
+                message = "LLM 服务不可用，无法生成摘要。请配置 API Key。"
+            )
+        }
+
+        return try {
+            // 调用 LLM 生成摘要
+            val llmRequest = LLMRequest(
+                messages = listOf(
+                    LLMMessage(
+                        role = MessageRole.SYSTEM,
+                        content = "你是一个专业的文本摘要助手。请用简洁的1-2句话总结用户提供的笔记内容，突出核心要点。"
+                    ),
+                    LLMMessage(
+                        role = MessageRole.USER,
+                        content = "请总结以下笔记：\n\n标题：${note.title}\n\n内容：${note.content}"
+                    )
+                ),
+                temperature = 0.3f, // 低温度保证摘要稳定
+                maxTokens = 200
+            )
+
+            val response = llmProvider!!.generate(llmRequest)
+            val summary = response.content.trim()
+
+            TaskResponsePayload(
+                status = TaskStatus.SUCCESS,
+                message = "已生成摘要",
+                data = ResponseData(
+                    type = "note_summary",
+                    items = listOf(
+                        mapOf(
+                            "note_id" to note.id,
+                            "title" to note.title,
+                            "summary" to summary,
+                            "original_length" to note.content.length.toString(),
+                            "llm_provider" to llmProvider!!.providerType.name
+                        )
+                    )
+                ),
+                a2ui = buildSummarySpec(note, summary)
+            )
+        } catch (e: Exception) {
+            TaskResponsePayload(
+                status = TaskStatus.FAILED,
+                message = "生成摘要失败: ${e.message}"
+            )
+        }
+    }
+
     private fun notFoundResponse() = TaskResponsePayload(
         status = TaskStatus.FAILED,
         message = "笔记未找到"
@@ -219,6 +308,44 @@ class NotepadAgent : BaseAppAgent("notepad", "笔记本") {
                             text = "删除",
                             action = A2UIAction(ActionType.AGENT_CALL, "notepad", "delete_note",
                                 mapOf("note_id" to note.id, "intent" to "delete_note"))
+                        ),
+                        A2UIButton(
+                            text = "生成摘要",
+                            action = A2UIAction(ActionType.AGENT_CALL, "notepad", "summarize_note",
+                                mapOf("note_id" to note.id, "intent" to "summarize_note"))
+                        )
+                    )
+                )
+            )
+        )
+    }
+
+    private fun buildSummarySpec(note: Note, summary: String): A2UISpec {
+        return A2UISpec(
+            root = A2UICard(
+                id = "note_summary_${note.id}",
+                header = A2UIText(
+                    text = "📝 ${note.title}",
+                    textStyle = TextStyle(fontSize = 20, fontWeight = FontWeight.BOLD)
+                ),
+                content = A2UIContainer(
+                    direction = Direction.VERTICAL,
+                    children = listOf(
+                        A2UIText(
+                            text = "智能摘要：",
+                            textStyle = TextStyle(fontSize = 16, fontWeight = FontWeight.BOLD, color = "#2196F3")
+                        ),
+                        A2UIText(
+                            text = summary,
+                            textStyle = TextStyle(fontSize = 14, color = "#333333")
+                        ),
+                        A2UIText(
+                            text = "原文 (${note.content.length} 字)：",
+                            textStyle = TextStyle(fontSize = 14, fontWeight = FontWeight.BOLD, color = "#666666")
+                        ),
+                        A2UIText(
+                            text = note.content,
+                            textStyle = TextStyle(fontSize = 12, color = "#999999")
                         )
                     )
                 )

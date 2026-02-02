@@ -30,6 +30,7 @@ class IntentParser(private val provider: LLMProvider) {
 {
   "intentType": "APP_SEARCH | GENERAL_CHAT | SYSTEM_SETTINGS",
   "targetApps": ["已注册Agent ID列表"],
+  "broadcastCapability": "SEARCH | ORDER | NAVIGATION | null",
   "action": "操作类型",
   "entities": {
     "intent": "具体意图",
@@ -55,14 +56,25 @@ class IntentParser(private val provider: LLMProvider) {
   * 如："calculator"、"notepad"
   * 用户没有明确指定应用时为空数组
 
+- broadcastCapability: 广播能力（用于多平台查询）
+  * SEARCH: 查询能力（航班查询、商品搜索等）
+  * ORDER: 订单能力（下单、支付等）
+  * NAVIGATION: 导航能力（网页浏览等）
+  * null: 不需要广播
+  * 使用时 targetApps 通常为空，让系统自动选择所有支持该能力的Agent
+
 - action: 具体操作
   * 计算器: "calculate"
   * 笔记本: "add_note"、"list_notes"、"view_note"、"edit_note"、"delete_note"
+  * 航班: "search_flight"、"book_flight"
 
 - entities: 提取的关键信息
   * expression: 数学表达式（用于计算器）
   * title: 笔记标题
   * content: 笔记内容
+  * departure: 出发城市（用于航班查询）
+  * arrival: 到达城市（用于航班查询）
+  * date: 出发日期（用于航班查询，格式：YYYY-MM-DD）
   * intent: 原始意图描述
 
 - confidence: 置信度（0.0-1.0）
@@ -88,6 +100,7 @@ class IntentParser(private val provider: LLMProvider) {
 {
   "intentType": "APP_SEARCH",
   "targetApps": ["calculator"],
+  "broadcastCapability": null,
   "action": "calculate",
   "entities": {
     "expression": "2 + 3",
@@ -106,6 +119,7 @@ class IntentParser(private val provider: LLMProvider) {
 {
   "intentType": "APP_SEARCH",
   "targetApps": ["notepad"],
+  "broadcastCapability": null,
   "action": "add_note",
   "entities": {
     "intent": "add_note",
@@ -125,6 +139,7 @@ class IntentParser(private val provider: LLMProvider) {
 {
   "intentType": "APP_SEARCH",
   "targetApps": ["notepad"],
+  "broadcastCapability": null,
   "action": "list_notes",
   "entities": {
     "intent": "list_notes"
@@ -136,12 +151,37 @@ class IntentParser(private val provider: LLMProvider) {
   "clarificationQuestion": null
 }
 
-### 示例 4：不明确的意图
+### 示例 4：航班查询（多平台协作）
+用户输入："帮我查询明天北京到上海的机票"
+输出：
+{
+  "intentType": "APP_SEARCH",
+  "targetApps": [],
+  "broadcastCapability": "SEARCH",
+  "action": "search_flight",
+  "entities": {
+    "departure": "北京",
+    "arrival": "上海",
+    "date": "2026-02-03"
+  },
+  "confidence": 0.95,
+  "coordinationStrategy": "PARALLEL",
+  "preferredLayout": "UNIFIED_LIST",
+  "needsClarification": false,
+  "clarificationQuestion": null
+}
+说明：
+- 使用 broadcastCapability: "SEARCH" 自动查找所有支持查询的Agent
+- 使用 PARALLEL 策略并行查询多个平台（携程、南航、网页浏览器）
+- 系统会自动去重、排序、合并多平台数据
+
+### 示例 5：不明确的意图
 用户输入："帮我处理一下"
 输出：
 {
   "intentType": "GENERAL_CHAT",
   "targetApps": [],
+  "broadcastCapability": null,
   "action": "chat",
   "entities": {
     "intent": "帮我处理一下"

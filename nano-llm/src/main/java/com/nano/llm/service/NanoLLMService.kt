@@ -118,7 +118,14 @@ class NanoLLMService(
     /** 注册 App Agent */
     fun registerAgent(agent: AppAgent) {
         agentRegistry.registerAgent(agent)
-        NanoLog.i(TAG, "Agent registered: ${agent.agentId}")
+
+        // 如果是 BaseAppAgent，注入 LLM Provider
+        if (agent is com.nano.llm.agent.BaseAppAgent) {
+            agent.setLLMProvider(provider)
+            NanoLog.i(TAG, "Agent registered with LLM support: ${agent.agentId}")
+        } else {
+            NanoLog.i(TAG, "Agent registered: ${agent.agentId}")
+        }
     }
 
     /** 注销 App Agent */
