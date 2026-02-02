@@ -129,14 +129,21 @@ class NanoApplication : Application() {
             else -> null
         }
 
+        val apiKey = BuildConfig.LLM_API_KEY.takeIf { it.isNotEmpty() }
         val config = LLMConfig(
             providerType = providerType,
-            apiKey = BuildConfig.LLM_API_KEY.takeIf { it.isNotEmpty() },
+            apiKey = apiKey,
             baseUrl = baseUrl,
             model = model
         )
 
-        NanoLog.i(TAG, "LLM Config - Provider: $providerName, Model: $model, BaseUrl: $baseUrl")
+        NanoLog.i(TAG, "========== LLM Configuration ==========")
+        NanoLog.i(TAG, "Provider Name: $providerName")
+        NanoLog.i(TAG, "Provider Type: $providerType")
+        NanoLog.i(TAG, "API Key: ${if (apiKey.isNullOrEmpty()) "NOT SET" else "SET (${apiKey.length} chars)"}")
+        NanoLog.i(TAG, "Base URL: ${baseUrl ?: "DEFAULT"}")
+        NanoLog.i(TAG, "Model: ${model ?: "DEFAULT"}")
+        NanoLog.i(TAG, "=======================================")
 
         llmService = NanoLLMService(config)
         llmService.start()

@@ -80,7 +80,16 @@ class NanoLLMService(
         NanoLog.i(TAG, "Starting NanoLLMService...")
 
         provider = LLMProviderFactory.create(config)
-        NanoLog.i(TAG, "Provider initialized: ${provider.providerType}, available=${provider.isAvailable}")
+
+        NanoLog.i(TAG, "========== LLM Provider Status ==========")
+        NanoLog.i(TAG, "Provider Type: ${provider.providerType}")
+        NanoLog.i(TAG, "Provider Available: ${provider.isAvailable}")
+        if (!provider.isAvailable) {
+            NanoLog.w(TAG, "⚠️  LLM Provider is NOT available!")
+            NanoLog.w(TAG, "⚠️  System will use mock responses")
+            NanoLog.w(TAG, "⚠️  Please configure API key in local.properties")
+        }
+        NanoLog.i(TAG, "========================================")
 
         intentParser = IntentParser(provider)
 

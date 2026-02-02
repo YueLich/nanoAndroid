@@ -1,8 +1,10 @@
 package com.nano.llm.intent
 
+import com.nano.kernel.NanoLog
 import com.nano.llm.agent.AgentCapability
 import com.nano.llm.model.*
 import com.nano.llm.provider.LLMProvider
+import com.nano.llm.provider.LLMProviderException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -20,6 +22,8 @@ class IntentParser(private val provider: LLMProvider) {
     private val json = Json { ignoreUnknownKeys = true }
 
     companion object {
+        private const val TAG = "IntentParser"
+
         /** 意图解析系统提示模板 */
         const val INTENT_PARSING_PROMPT = """你是一个意图解析助手，将用户的自然语言输入转换为结构化的意图对象。
 
@@ -214,6 +218,15 @@ class IntentParser(private val provider: LLMProvider) {
         agentCapabilities: List<String> = emptyList(),
         conversationHistory: List<LLMMessage> = emptyList()
     ): IntentUnderstanding {
+        NanoLog.i(TAG, "Parsing user input: \"$userInput\"")
+        NanoLog.i(TAG, "Provider available: ${provider.isAvailable}")
+
+        // 检查 Provider 是否可用
+        if (!provider.isAvailable) {
+            NanoLog.w(TAG, "⚠️  LLM Provider not available, returning fallback intent")
+            return getFallbackIntent(userInput, "LLM Provider 未配置或不可用")
+        }
+
         val capabilities = if (agentCapabilities.isEmpty()) {
             "无已注册应用"
         } else {
@@ -227,15 +240,43 @@ class IntentParser(private val provider: LLMProvider) {
         messages.addAll(conversationHistory)
         messages.add(LLMMessage(role = MessageRole.USER, content = userInput))
 
-        val response = provider.generate(
-            LLMRequest(
-                messages = messages,
-                temperature = 0.1f, // 低温度确保解析结果一致性
-                maxTokens = 512
+        return try {
+            NanoLog.i(TAG, "Calling LLM provider (${provider.providerType})...")
+            val response = provider.generate(
+                LLMRequest(
+                    messages = messages,
+                    temperature = 0.1f, // 低温度确保解析结果一致性
+                    maxTokens = 512
+                )
             )
-        )
+            NanoLog.i(TAG, "LLM response received (${response.content.length} chars)")
+            NanoLog.d(TAG, "LLM response: ${response.content.take(200)}")
 
-        return parseResponse(response.content)
+            parseResponse(response.content)
+        } catch (e: LLMProviderException) {
+            NanoLog.e(TAG, "LLM Provider error: ${e.message}", e)
+            getFallbackIntent(userInput, "LLM 调用失败: ${e.message}")
+        } catch (e: Exception) {
+            NanoLog.e(TAG, "Unexpected error during LLM call: ${e.message}", e)
+            getFallbackIntent(userInput, "意图解析失败: ${e.message}")
+        }
+    }
+
+    /**
+     * 获取兜底意图
+     */
+    private fun getFallbackIntent(userInput: String, reason: String): IntentUnderstanding {
+        NanoLog.w(TAG, "Returning fallback intent: $reason")
+        return IntentUnderstanding(
+            intentType = IntentType.GENERAL_CHAT,
+            action = "chat",
+            entities = mapOf("input" to userInput),
+            confidence = 0.1f,
+            coordinationStrategy = CoordinationStrategy.FALLBACK,
+            preferredLayout = MergeLayout.UNIFIED_LIST,
+            needsClarification = true,
+            clarificationQuestion = "抱歉，我无法理解你的意思。原因：$reason\n\n你可以试试：\n- 计算 2 + 3\n- 新增笔记：学习 Android"
+        )
     }
 
     /**
@@ -250,10 +291,15 @@ class IntentParser(private val provider: LLMProvider) {
                 .removeSurrounding("```", "```")
                 .trim()
 
+            NanoLog.d(TAG, "Parsing JSON: ${cleanJson.take(200)}")
             val parsed = json.decodeFromString<ParsedIntent>(cleanJson)
-            parsed.toIntentUnderstanding()
+            val understanding = parsed.toIntentUnderstanding()
+            NanoLog.i(TAG, "✓ Intent parsed: ${understanding.intentType}, action=${understanding.action}, confidence=${understanding.confidence}")
+            understanding
         } catch (e: Exception) {
             // 解析失败，返回兜底意图
+            NanoLog.e(TAG, "Failed to parse LLM response: ${e.message}", e)
+            NanoLog.e(TAG, "Raw response: ${jsonContent.take(500)}")
             IntentUnderstanding(
                 intentType = IntentType.GENERAL_CHAT,
                 action = "chat",
@@ -261,7 +307,7 @@ class IntentParser(private val provider: LLMProvider) {
                 coordinationStrategy = CoordinationStrategy.FALLBACK,
                 preferredLayout = MergeLayout.UNIFIED_LIST,
                 needsClarification = true,
-                clarificationQuestion = "抱歉，我没有理解你的意思。你能详细说说吗？"
+                clarificationQuestion = "抱歉，我没有理解你的意思（解析错误：${e.message?.take(50)}）。\n\n你可以试试：\n- 计算 2 + 3\n- 新增笔记：学习 Android"
             )
         }
     }
