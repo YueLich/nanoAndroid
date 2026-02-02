@@ -17,11 +17,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // LLM 配置（从 gradle.properties 或环境变量读取）
-        // 临时使用 MOCK provider，避免 API key 错误
-        buildConfigField("String", "LLM_PROVIDER", "\"mock\"")
-        buildConfigField("String", "LLM_API_KEY", "\"\"")
-        buildConfigField("String", "LLM_MODEL", "\"\"")
-        buildConfigField("String", "LLM_BASE_URL", "\"\"")
+        buildConfigField("String", "LLM_PROVIDER", "\"openrouter\"")
+        buildConfigField("String", "LLM_API_KEY", "\"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\"")
+        buildConfigField("String", "LLM_MODEL", "\"google/gemini-2.0-flash-exp:free\"")
+        buildConfigField("String", "LLM_BASE_URL", "\"https://openrouter.ai/api\"")
     }
 
     buildTypes {
