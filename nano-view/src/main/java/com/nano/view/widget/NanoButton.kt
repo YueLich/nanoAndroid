@@ -28,12 +28,12 @@ class NanoButton : NanoTextView() {
         }
     }
 
-    /** 背景颜色 */
-    var backgroundColor: Int = 0xFFCCCCCC.toInt() // 浅灰色
 
     init {
         // 按钮默认可点击
         isClickable = true
+        // 设置默认背景颜色
+        backgroundColor = 0xFFCCCCCC.toInt() // 浅灰色
     }
 
     override fun onTouchEvent(x: Int, y: Int): Boolean {

@@ -292,4 +292,127 @@ class A2UIRendererTest {
 
         assertEquals(0x80FF0000.toInt(), view.textColor)
     }
+
+    @Test
+    fun testApplyStyleWithPadding() {
+        val spec = A2UISpec(
+            root = A2UIText(
+                text = "Padded",
+                style = A2UIStyle(
+                    padding = Spacing(top = 10, right = 20, bottom = 30, left = 40)
+                )
+            )
+        )
+        val view = renderer.render(spec)
+
+        assertEquals(40, view.paddingLeft)
+        assertEquals(10, view.paddingTop)
+        assertEquals(20, view.paddingRight)
+        assertEquals(30, view.paddingBottom)
+    }
+
+    @Test
+    fun testApplyStyleWithMargin() {
+        val spec = A2UISpec(
+            root = A2UIButton(
+                text = "Margined",
+                action = A2UIAction(ActionType.AGENT_CALL, "test", "test"),
+                style = A2UIStyle(
+                    margin = Spacing(top = 5, right = 10, bottom = 15, left = 20)
+                )
+            )
+        )
+        val view = renderer.render(spec)
+
+        assertNotNull(view.layoutParams)
+        assertEquals(20, view.layoutParams!!.leftMargin)
+        assertEquals(5, view.layoutParams!!.topMargin)
+        assertEquals(10, view.layoutParams!!.rightMargin)
+        assertEquals(15, view.layoutParams!!.bottomMargin)
+    }
+
+    @Test
+    fun testApplyStyleWithBackgroundColor() {
+        val spec = A2UISpec(
+            root = A2UIContainer(
+                children = emptyList(),
+                style = A2UIStyle(backgroundColor = "#FFAA00")
+            )
+        )
+        val view = renderer.render(spec)
+
+        assertEquals(0xFFFFAA00.toInt(), view.backgroundColor)
+    }
+
+    @Test
+    fun testApplyStyleWithDimensions() {
+        val spec = A2UISpec(
+            root = A2UIText(
+                text = "Sized",
+                style = A2UIStyle(width = 200, height = 100)
+            )
+        )
+        val view = renderer.render(spec)
+
+        assertNotNull(view.layoutParams)
+        assertEquals(200, view.layoutParams!!.width)
+        assertEquals(100, view.layoutParams!!.height)
+    }
+
+    @Test
+    fun testApplyStyleWithBorderRadius() {
+        val spec = A2UISpec(
+            root = A2UIButton(
+                text = "Rounded",
+                action = A2UIAction(ActionType.AGENT_CALL, "test", "test"),
+                style = A2UIStyle(borderRadius = 8)
+            )
+        )
+        val view = renderer.render(spec)
+
+        assertEquals(8, view.borderRadius)
+    }
+
+    @Test
+    fun testRenderButtonWithAction() {
+        val action = A2UIAction(
+            type = ActionType.AGENT_CALL,
+            target = "notepad",
+            method = "add_note",
+            params = mapOf("title" to "Test")
+        )
+        val spec = A2UISpec(
+            root = A2UIButton(text = "Add", action = action)
+        )
+        val view = renderer.render(spec) as NanoButton
+
+        // 验证 action 存储在 tag 中
+        assertNotNull(view.tag)
+        assertTrue(view.tag is A2UIAction)
+        val storedAction = view.tag as A2UIAction
+        assertEquals("notepad", storedAction.target)
+        assertEquals("add_note", storedAction.method)
+    }
+
+    @Test
+    fun testRenderListWithItemClick() {
+        val onItemClick = A2UIAction(
+            type = ActionType.AGENT_CALL,
+            target = "notepad",
+            method = "view_note"
+        )
+        val spec = A2UISpec(
+            root = A2UIList(
+                items = listOf(
+                    A2UIListItem(id = "note1", title = "Note 1", data = mapOf("note_id" to "1"))
+                ),
+                onItemClick = onItemClick
+            )
+        )
+        val view = renderer.render(spec) as NanoLinearLayout
+
+        val itemView = view.getChildAt(0)
+        assertTrue(itemView.isClickable)
+        assertNotNull(itemView.tag)
+    }
 }

@@ -1,8 +1,11 @@
 package com.nano.llm.a2ui
 
+import kotlinx.serialization.Serializable
+
 /**
  * A2UI 协议 - AI 到 UI 渲染规格
  */
+@Serializable
 data class A2UISpec(
     val version: String = "1.0",
     val root: A2UIComponent
@@ -11,12 +14,14 @@ data class A2UISpec(
 /**
  * A2UI 组件基类
  */
+@Serializable
 sealed class A2UIComponent {
     abstract val id: String?
     abstract val style: A2UIStyle?
 }
 
 /** 容器组件 */
+@Serializable
 data class A2UIContainer(
     override val id: String? = null,
     override val style: A2UIStyle? = null,
@@ -25,6 +30,7 @@ data class A2UIContainer(
 ) : A2UIComponent()
 
 /** 文本组件 */
+@Serializable
 data class A2UIText(
     override val id: String? = null,
     override val style: A2UIStyle? = null,
@@ -33,6 +39,7 @@ data class A2UIText(
 ) : A2UIComponent()
 
 /** 按钮组件 */
+@Serializable
 data class A2UIButton(
     override val id: String? = null,
     override val style: A2UIStyle? = null,
@@ -41,6 +48,7 @@ data class A2UIButton(
 ) : A2UIComponent()
 
 /** 列表组件 */
+@Serializable
 data class A2UIList(
     override val id: String? = null,
     override val style: A2UIStyle? = null,
@@ -49,6 +57,7 @@ data class A2UIList(
 ) : A2UIComponent()
 
 /** 卡片组件 */
+@Serializable
 data class A2UICard(
     override val id: String? = null,
     override val style: A2UIStyle? = null,
@@ -59,6 +68,7 @@ data class A2UICard(
 ) : A2UIComponent()
 
 /** 输入组件 */
+@Serializable
 data class A2UIInput(
     override val id: String? = null,
     override val style: A2UIStyle? = null,
@@ -69,6 +79,7 @@ data class A2UIInput(
 ) : A2UIComponent()
 
 /** Tab 栏组件 */
+@Serializable
 data class A2UITabBar(
     override val id: String? = null,
     override val style: A2UIStyle? = null,
@@ -76,6 +87,7 @@ data class A2UITabBar(
 ) : A2UIComponent()
 
 /** Tab 内容组件 */
+@Serializable
 data class A2UITabContent(
     override val id: String? = null,
     override val style: A2UIStyle? = null,
@@ -84,6 +96,7 @@ data class A2UITabContent(
 
 // ---- 支持类型 ----
 
+@Serializable
 data class A2UIListItem(
     val id: String,
     val title: String,
@@ -93,12 +106,14 @@ data class A2UIListItem(
     val data: Map<String, String> = emptyMap()
 )
 
+@Serializable
 data class A2UITab(
     val id: String,
     val label: String,
     val content: A2UIComponent? = null
 )
 
+@Serializable
 data class A2UIAction(
     val type: ActionType,
     val target: String,
@@ -106,6 +121,7 @@ data class A2UIAction(
     val params: Map<String, String>? = null
 )
 
+@Serializable
 data class A2UIStyle(
     val width: Int? = null,
     val height: Int? = null,
@@ -115,6 +131,7 @@ data class A2UIStyle(
     val borderRadius: Int? = null
 )
 
+@Serializable
 data class Spacing(
     val top: Int = 0,
     val right: Int = 0,
@@ -122,6 +139,7 @@ data class Spacing(
     val left: Int = 0
 )
 
+@Serializable
 data class TextStyle(
     val fontSize: Int? = null,
     val fontWeight: FontWeight? = null,
@@ -129,8 +147,17 @@ data class TextStyle(
     val align: TextAlign? = null
 )
 
+@Serializable
 enum class Direction { VERTICAL, HORIZONTAL }
+
+@Serializable
 enum class ActionType { AGENT_CALL, NAVIGATE, SUBMIT, DISMISS, CUSTOM }
+
+@Serializable
 enum class InputType { TEXT, NUMBER, PASSWORD, MULTILINE }
+
+@Serializable
 enum class FontWeight { NORMAL, BOLD }
+
+@Serializable
 enum class TextAlign { LEFT, CENTER, RIGHT }

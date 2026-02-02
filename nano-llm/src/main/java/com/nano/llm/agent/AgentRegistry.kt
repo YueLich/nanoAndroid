@@ -36,6 +36,9 @@ class AgentRegistry {
     /** 获取 Agent */
     fun getAgent(agentId: String): AppAgent? = agents[agentId]
 
+    /** 获取所有 Agent */
+    fun getAllAgents(): List<AppAgent> = agents.values.toList()
+
     /** 根据单个能力查找 Agent */
     fun findAgentsByCapability(capability: AgentCapability): List<AppAgent> {
         return capabilityIndex[capability]?.mapNotNull { agents[it] } ?: emptyList()

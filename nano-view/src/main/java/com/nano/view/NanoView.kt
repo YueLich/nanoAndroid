@@ -66,6 +66,49 @@ abstract class NanoView {
     /** 是否需要布局 */
     private var needsLayout: Boolean = false
 
+    // ==================== 样式属性 ====================
+
+    /** 内边距 - left */
+    var paddingLeft: Int = 0
+        private set
+
+    /** 内边距 - top */
+    var paddingTop: Int = 0
+        private set
+
+    /** 内边距 - right */
+    var paddingRight: Int = 0
+        private set
+
+    /** 内边距 - bottom */
+    var paddingBottom: Int = 0
+        private set
+
+    /** 背景颜色 (ARGB) */
+    var backgroundColor: Int = 0x00FFFFFF
+        set(value) {
+            if (field != value) {
+                field = value
+                requestLayout()
+            }
+        }
+
+    /** 圆角半径 */
+    var borderRadius: Int = 0
+        set(value) {
+            if (field != value) {
+                field = value
+                requestLayout()
+            }
+        }
+
+    /**
+     * 附加数据 - 用于存储额外信息
+     *
+     * 通过 tag 机制存储额外数据，避免模块间的依赖
+     */
+    var tag: Any? = null
+
     // ==================== 测量 ====================
 
     /**
@@ -161,6 +204,44 @@ abstract class NanoView {
         // 子类可以重写
     }
 
+    // ==================== 样式方法 ====================
+
+    /**
+     * 设置内边距
+     *
+     * @param left 左边距
+     * @param top 上边距
+     * @param right 右边距
+     * @param bottom 下边距
+     */
+    fun setPadding(left: Int, top: Int, right: Int, bottom: Int) {
+        if (paddingLeft != left || paddingTop != top ||
+            paddingRight != right || paddingBottom != bottom) {
+            paddingLeft = left
+            paddingTop = top
+            paddingRight = right
+            paddingBottom = bottom
+            requestLayout()
+        }
+    }
+
+    /**
+     * 设置统一内边距
+     */
+    fun setPadding(padding: Int) {
+        setPadding(padding, padding, padding, padding)
+    }
+
+    /**
+     * 获取总内边距宽度（左 + 右）
+     */
+    fun getPaddingWidth(): Int = paddingLeft + paddingRight
+
+    /**
+     * 获取总内边距高度（上 + 下）
+     */
+    fun getPaddingHeight(): Int = paddingTop + paddingBottom
+
     // ==================== 事件处理 ====================
 
     /**
@@ -249,6 +330,52 @@ abstract class NanoView {
     override fun toString(): String {
         return "${javaClass.simpleName}@${hashCode().toString(16)}(id=$id)"
     }
+
+    // ==================== LayoutParams ====================
+
+    /**
+     * 布局参数
+     *
+     * 类似 Android 的 ViewGroup.LayoutParams，用于描述视图在父容器中的布局行为
+     */
+    open class LayoutParams(
+        var width: Int = WRAP_CONTENT,
+        var height: Int = WRAP_CONTENT
+    ) {
+        companion object {
+            const val MATCH_PARENT = -1
+            const val WRAP_CONTENT = -2
+        }
+
+        /** 外边距 */
+        var leftMargin: Int = 0
+        var topMargin: Int = 0
+        var rightMargin: Int = 0
+        var bottomMargin: Int = 0
+
+        /**
+         * 设置外边距
+         */
+        fun setMargins(left: Int, top: Int, right: Int, bottom: Int) {
+            leftMargin = left
+            topMargin = top
+            rightMargin = right
+            bottomMargin = bottom
+        }
+
+        /**
+         * 获取总外边距宽度
+         */
+        fun getMarginWidth(): Int = leftMargin + rightMargin
+
+        /**
+         * 获取总外边距高度
+         */
+        fun getMarginHeight(): Int = topMargin + bottomMargin
+    }
+
+    /** 视图的布局参数 */
+    var layoutParams: LayoutParams? = null
 
     /**
      * MeasureSpec - 测量规格

@@ -46,7 +46,56 @@ class A2UIRenderer {
         // 应用通用 ID（组件级别 ID 优先）
         component.id?.let { view.id = it }
 
+        // 应用通用样式
+        component.style?.let { applyStyle(view, it) }
+
         return view
+    }
+
+    /**
+     * 应用 A2UIStyle 到 NanoView
+     */
+    private fun applyStyle(view: NanoView, style: A2UIStyle) {
+        // 应用尺寸
+        val layoutParams = view.layoutParams ?: NanoView.LayoutParams(
+            width = NanoView.LayoutParams.WRAP_CONTENT,
+            height = NanoView.LayoutParams.WRAP_CONTENT
+        )
+
+        style.width?.let { layoutParams.width = it }
+        style.height?.let { layoutParams.height = it }
+
+        // 应用外边距
+        style.margin?.let { margin ->
+            layoutParams.setMargins(
+                left = margin.left,
+                top = margin.top,
+                right = margin.right,
+                bottom = margin.bottom
+            )
+        }
+
+        view.layoutParams = layoutParams
+
+        // 应用内边距
+        style.padding?.let { padding ->
+            view.setPadding(
+                left = padding.left,
+                top = padding.top,
+                right = padding.right,
+                bottom = padding.bottom
+            )
+        }
+
+        // 应用背景颜色
+        style.backgroundColor?.let { colorStr ->
+            view.backgroundColor = parseColor(colorStr)
+        }
+
+        // 应用圆角
+        style.borderRadius?.let { radius ->
+            view.borderRadius = radius
+        }
     }
 
     // ==================== 具体组件渲染 ====================
@@ -82,6 +131,8 @@ class A2UIRenderer {
         nanoButton.text = button.text
         // 按钮 ID 用于事件路由，如果组件没 ID 则自动生成
         nanoButton.id = button.id ?: "btn_${button.action.target}_${button.action.method}"
+        // 将 A2UIAction 存储到 tag 中，供事件处理使用
+        nanoButton.tag = button.action
         return nanoButton
     }
 
@@ -97,11 +148,28 @@ class A2UIRenderer {
                 item.subtitle?.let { append(" - $it") }
                 item.trailing?.let { append(" [$it]") }
             }
+
+            // 如果列表有 onItemClick 动作，则将其与 item.data 一起存储到 tag
+            list.onItemClick?.let { action ->
+                itemView.isClickable = true
+                // 存储 action 和 item 数据，供点击时使用
+                itemView.tag = ListItemData(action, item.id, item.data)
+            }
+
             layout.addView(itemView)
         }
 
         return layout
     }
+
+    /**
+     * 列表项数据 - 存储在 NanoTextView.tag 中
+     */
+    data class ListItemData(
+        val action: A2UIAction,
+        val itemId: String,
+        val itemData: Map<String, String>
+    )
 
     private fun renderCard(card: A2UICard): NanoView {
         val layout = NanoLinearLayout()

@@ -11,13 +11,18 @@ import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.nano.a2ui.bridge.A2UIEventBridge
 import com.nano.a2ui.bridge.A2UIRenderer
+import com.nano.llm.a2ui.A2UIAction
 import com.nano.llm.a2ui.A2UISpec
+import com.nano.llm.agent.TaskResponsePayload
+import com.nano.llm.agent.TaskStatus
 import com.nano.android.R
 import com.nano.framework.ui.ChatMessage
 import com.nano.framework.ui.ILauncherView
 import com.nano.kernel.NanoLog
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.Json
 
 /**
  * NanoAndroid Shell Activity
@@ -48,8 +53,11 @@ class NanoShellActivity : ComponentActivity(), ILauncherView {
     // Activity 级别协程作用域
     private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    // A2UI 动作监听器（由 LauncherUI 设置）
-    private var onA2UIActionListener: ((String) -> Unit)? = null
+    // A2UI 事件桥接器
+    private val eventBridge = A2UIEventBridge()
+
+    // JSON 序列化器
+    private val json = Json { ignoreUnknownKeys = true }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,6 +117,28 @@ class NanoShellActivity : ComponentActivity(), ILauncherView {
             val llmService = app.getLLMService()
             val api = llmService.getNaturalLanguageAPI()
 
+            // 注册所有 Agent 到 EventBridge
+            val agentRegistry = llmService.getAgentRegistry()
+            agentRegistry.getAllAgents().forEach { agent ->
+                eventBridge.registerAgent(agent)
+                NanoLog.i(TAG, "Registered agent to EventBridge: ${agent.agentId}")
+            }
+
+            // 设置全局事件回调
+            eventBridge.addGlobalCallback(object : A2UIEventBridge.EventCallback {
+                override fun onResponse(response: TaskResponsePayload) {
+                    activityScope.launch {
+                        handleAgentResponse(response)
+                    }
+                }
+
+                override fun onError(error: Exception) {
+                    activityScope.launch {
+                        showError("Agent 执行失败: ${error.message}")
+                    }
+                }
+            })
+
             // 创建 LauncherUI
             launcherUI = LauncherUI(api, this)
 
@@ -128,7 +158,7 @@ class NanoShellActivity : ComponentActivity(), ILauncherView {
                 addMessage(welcomeMsg)
             }
 
-            NanoLog.i(TAG, "LauncherUI initialized, ready for input")
+            NanoLog.i(TAG, "LauncherUI initialized, EventBridge has ${eventBridge.getRegisteredAgentCount()} agents")
         } catch (e: Exception) {
             NanoLog.e(TAG, "Failed to initialize LauncherUI", e)
             withContext(Dispatchers.Main) {
@@ -182,9 +212,26 @@ class NanoShellActivity : ComponentActivity(), ILauncherView {
             val renderer = A2UIRenderer()
             val nanoView = renderer.render(spec)
 
-            val converter = NanoViewConverter(this) { action ->
-                // A2UI 按钮点击回调
-                onA2UIActionListener?.invoke(action)
+            val converter = NanoViewConverter(this) { actionJson ->
+                // A2UI 按钮点击回调 - 路由到 EventBridge
+                activityScope.launch {
+                    try {
+                        // 反序列化 A2UIAction
+                        val action = json.decodeFromString<A2UIAction>(actionJson)
+                        NanoLog.i(TAG, "Action clicked: ${action.type} -> ${action.target}.${action.method}")
+
+                        // 通过 EventBridge 执行
+                        val response = eventBridge.executeAction(action)
+                        if (response != null) {
+                            handleAgentResponse(response)
+                        } else {
+                            showError("未找到目标 Agent: ${action.target}")
+                        }
+                    } catch (e: Exception) {
+                        NanoLog.e(TAG, "Failed to handle action", e)
+                        showError("操作失败: ${e.message}")
+                    }
+                }
             }
             val androidView = converter.convert(nanoView)
 
@@ -235,7 +282,86 @@ class NanoShellActivity : ComponentActivity(), ILauncherView {
     }
 
     override fun setOnA2UIActionListener(listener: (String) -> Unit) {
-        onA2UIActionListener = listener
+        // 已废弃，现在使用 EventBridge
+    }
+
+    // ==================== Agent 响应处理 ====================
+
+    /**
+     * 处理 Agent 响应
+     */
+    private suspend fun handleAgentResponse(response: TaskResponsePayload) {
+        withContext(Dispatchers.Main) {
+            when (response.status) {
+                TaskStatus.SUCCESS, TaskStatus.PARTIAL -> {
+                    // 显示成功消息
+                    val msg = ChatMessage.SystemMessage(
+                        id = "agent_response_${System.currentTimeMillis()}",
+                        timestamp = System.currentTimeMillis(),
+                        message = response.message ?: "操作完成"
+                    )
+                    addMessage(msg)
+
+                    // 如果有新的 A2UI，重新渲染
+                    response.a2ui?.let { spec ->
+                        renderA2UI(spec, "agent_action")
+                        showA2UIContainer(true)
+                    }
+
+                    scrollChatToBottom()
+                }
+
+                TaskStatus.FAILED -> {
+                    showError("操作失败: ${response.message ?: "未知错误"}")
+                }
+
+                TaskStatus.NEED_MORE_INFO -> {
+                    val msg = ChatMessage.SystemMessage(
+                        id = "need_info_${System.currentTimeMillis()}",
+                        timestamp = System.currentTimeMillis(),
+                        message = "需要更多信息: ${response.message ?: ""}"
+                    )
+                    addMessage(msg)
+                    scrollChatToBottom()
+                }
+
+                TaskStatus.NEED_CONFIRMATION -> {
+                    val msg = ChatMessage.SystemMessage(
+                        id = "need_confirm_${System.currentTimeMillis()}",
+                        timestamp = System.currentTimeMillis(),
+                        message = "需要确认: ${response.message ?: ""}"
+                    )
+                    addMessage(msg)
+                    scrollChatToBottom()
+                }
+
+                TaskStatus.IN_PROGRESS -> {
+                    // 显示进行中状态
+                    val msg = ChatMessage.SystemMessage(
+                        id = "in_progress_${System.currentTimeMillis()}",
+                        timestamp = System.currentTimeMillis(),
+                        message = "处理中: ${response.message ?: ""}..."
+                    )
+                    addMessage(msg)
+                    scrollChatToBottom()
+                }
+            }
+        }
+    }
+
+    /**
+     * 显示错误消息
+     */
+    private suspend fun showError(message: String) {
+        withContext(Dispatchers.Main) {
+            val errorMsg = ChatMessage.SystemMessage(
+                id = "error_${System.currentTimeMillis()}",
+                timestamp = System.currentTimeMillis(),
+                message = "❌ $message"
+            )
+            addMessage(errorMsg)
+            scrollChatToBottom()
+        }
     }
 
     // ==================== Activity 生命周期 ====================
