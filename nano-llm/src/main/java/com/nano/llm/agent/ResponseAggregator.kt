@@ -63,12 +63,45 @@ class ResponseAggregator {
     ): AggregatedResponse {
         val successResponses = responses.filter { it.success && it.payload != null }
 
-        // 分类响应
-        val a2uiResponses = successResponses
+        // 检查是否所有响应都需要更多信息
+        val needMoreInfoResponses = successResponses.filter {
+            it.payload?.status == TaskStatus.NEED_MORE_INFO
+        }
+
+        if (needMoreInfoResponses.size == successResponses.size && needMoreInfoResponses.isNotEmpty()) {
+            // 所有 Agent 都需要更多信息，收集所有请求的字段
+            val requestedFields = needMoreInfoResponses
+                .mapNotNull { it.payload?.message }
+                .distinct()
+
+            val summary = if (requestedFields.isNotEmpty()) {
+                "查询航班需要以下信息：\n" + requestedFields.joinToString("\n") { "• $it" }
+            } else {
+                "查询航班需要提供更多信息（出发城市、到达城市、出发日期）"
+            }
+
+            return AggregatedResponse(
+                a2uiResponses = emptyList(),
+                rawDataResponses = emptyList(),
+                mergedData = null,
+                summary = summary,
+                allFollowUpActions = emptyList(),
+                participatingAgents = needMoreInfoResponses.map { it.agent.agentId },
+                overallState = TaskStatus.NEED_MORE_INFO,
+                failedAgents = emptyList()
+            )
+        }
+
+        // 分类响应（排除 NEED_MORE_INFO 的响应）
+        val validResponses = successResponses.filter {
+            it.payload?.status != TaskStatus.NEED_MORE_INFO
+        }
+
+        val a2uiResponses = validResponses
             .filter { it.payload!!.a2ui != null }
             .map { it.payload!!.a2ui!! to it.agent.agentId }
 
-        val rawDataResponses = successResponses
+        val rawDataResponses = validResponses
             .filter { it.payload!!.data != null && it.payload!!.a2ui == null }
             .map { it.payload!!.data!! to it.agent.agentId }
 
@@ -78,10 +111,10 @@ class ResponseAggregator {
         } else null
 
         // 生成摘要
-        val summary = generateSummary(successResponses)
+        val summary = generateSummary(validResponses)
 
         // 合并后续操作
-        val allFollowUpActions = successResponses
+        val allFollowUpActions = validResponses
             .flatMap { it.payload!!.followUpActions ?: emptyList() }
 
         return AggregatedResponse(
@@ -90,8 +123,8 @@ class ResponseAggregator {
             mergedData = mergedData,
             summary = summary,
             allFollowUpActions = allFollowUpActions,
-            participatingAgents = successResponses.map { it.agent.agentId },
-            overallState = determineOverallState(successResponses),
+            participatingAgents = validResponses.map { it.agent.agentId },
+            overallState = determineOverallState(validResponses),
             failedAgents = responses.filter { !it.success }.map { it.agent.agentId }
         )
     }
@@ -211,8 +244,17 @@ class ResponseAggregator {
         val totalItems = responses.sumOf { it.payload?.data?.items?.size ?: 0 }
 
         return when {
+            responses.isEmpty() -> "抱歉，没有找到相关结果"
+            totalItems == 0 -> {
+                // 查询了但没有结果
+                if (sources.size > 1) {
+                    "已查询 ${sources.joinToString("、")}，但没有找到符合条件的航班"
+                } else {
+                    responses.first().payload?.message ?: "没有找到符合条件的结果"
+                }
+            }
             sources.size > 1 ->
-                "已从 ${sources.joinToString("、")} 共找到 $totalItems 个结果"
+                "已从 ${sources.joinToString("、")} 共找到 $totalItems 个航班"
             sources.size == 1 ->
                 responses.first().payload?.message ?: "已找到 $totalItems 个结果"
             else -> "抱歉，没有找到相关结果"

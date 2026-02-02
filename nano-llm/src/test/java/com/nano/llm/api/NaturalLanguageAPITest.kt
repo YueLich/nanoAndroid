@@ -21,7 +21,7 @@ class NaturalLanguageAPITest {
 
         val provider = MockLLMProvider(defaultResponse = llmResponse)
         val intentParser = IntentParser(provider)
-        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator())
+        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator(), provider)
 
         return NaturalLanguageAPI(
             agentRegistry = registry,

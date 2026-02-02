@@ -2,11 +2,30 @@ package com.nano.llm.agent
 
 import com.nano.llm.a2ui.*
 import com.nano.llm.intent.*
+import com.nano.llm.model.*
+import com.nano.llm.provider.LLMProvider
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.Assert.*
 
 class SystemAgentTest {
+
+    private val mockLLMProvider = object : LLMProvider {
+        override val providerType = ProviderType.MOCK
+        override val isAvailable = true
+
+        override suspend fun generate(request: LLMRequest): LLMResponse {
+            return LLMResponse(
+                content = "Mock response",
+                model = "mock-model",
+                finishReason = "stop"
+            )
+        }
+
+        override suspend fun generateWithStream(request: LLMRequest, callback: StreamCallback): LLMResponse {
+            return generate(request)
+        }
+    }
 
     private fun createMockAgent(
         id: String,
@@ -39,7 +58,8 @@ class SystemAgentTest {
         return SystemAgent(
             agentRegistry = registry,
             agentCoordinator = AgentCoordinator(),
-            responseAggregator = ResponseAggregator()
+            responseAggregator = ResponseAggregator(),
+            llmProvider = mockLLMProvider
         )
     }
 
@@ -55,7 +75,7 @@ class SystemAgentTest {
         val agent2 = createMockAgent("eleme", "饿了么")
         val registry = createRegistry(agent1, agent2)
 
-        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator())
+        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator(), mockLLMProvider)
 
         val understanding = IntentUnderstanding(
             intentType = IntentType.APP_SEARCH,
@@ -79,7 +99,7 @@ class SystemAgentTest {
         val agent3 = createMockAgent("dianping", "大众点评")
         val registry = createRegistry(agent1, agent2, agent3)
 
-        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator())
+        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator(), mockLLMProvider)
 
         val understanding = IntentUnderstanding(
             intentType = IntentType.APP_SEARCH,
@@ -104,7 +124,7 @@ class SystemAgentTest {
         val agent3 = createMockAgent("music", "音乐", setOf(AgentCapability.MEDIA))
         val registry = createRegistry(agent1, agent2, agent3)
 
-        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator())
+        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator(), mockLLMProvider)
 
         val understanding = IntentUnderstanding(
             intentType = IntentType.APP_SEARCH,
@@ -128,7 +148,7 @@ class SystemAgentTest {
         val searchAgent = createMockAgent("meituan", "美团", setOf(AgentCapability.SEARCH))
         val registry = createRegistry(settingsAgent, searchAgent)
 
-        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator())
+        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator(), mockLLMProvider)
 
         val understanding = IntentUnderstanding(
             intentType = IntentType.SYSTEM_SETTINGS,
@@ -149,7 +169,7 @@ class SystemAgentTest {
         val defaultAgent = createMockAgent("default", "Default Agent")
         val registry = createRegistry(defaultAgent)
 
-        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator())
+        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator(), mockLLMProvider)
 
         val understanding = IntentUnderstanding(
             intentType = IntentType.GENERAL_CHAT,
@@ -170,7 +190,7 @@ class SystemAgentTest {
         val agent = createMockAgent("meituan", "美团", setOf(AgentCapability.SEARCH))
         val registry = createRegistry(agent)
 
-        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator())
+        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator(), mockLLMProvider)
 
         val understanding = IntentUnderstanding(
             intentType = IntentType.GENERAL_CHAT,
@@ -190,7 +210,7 @@ class SystemAgentTest {
         val agent = createMockAgent("meituan", "美团")
         val registry = createRegistry(agent)
 
-        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator())
+        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator(), mockLLMProvider)
 
         val understanding = IntentUnderstanding(
             intentType = IntentType.APP_SEARCH,
@@ -209,7 +229,7 @@ class SystemAgentTest {
     @Test
     fun testProcessRequestNoAgentsAvailable() = runTest {
         val registry = AgentRegistry()  // 空注册表
-        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator())
+        val systemAgent = SystemAgent(registry, AgentCoordinator(), ResponseAggregator(), mockLLMProvider)
 
         val understanding = IntentUnderstanding(
             intentType = IntentType.APP_SEARCH,

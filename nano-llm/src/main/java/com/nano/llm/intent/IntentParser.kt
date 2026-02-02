@@ -179,7 +179,27 @@ class IntentParser(private val provider: LLMProvider) {
 - 使用 PARALLEL 策略并行查询多个平台（携程、南航、网页浏览器）
 - 系统会自动去重、排序、合并多平台数据
 
-### 示例 5：不明确的意图
+### 示例 5：缺少参数的航班查询
+用户输入："查询航班"
+输出：
+{
+  "intentType": "APP_SEARCH",
+  "targetApps": [],
+  "broadcastCapability": "SEARCH",
+  "action": "search_flight",
+  "entities": {},
+  "confidence": 0.6,
+  "coordinationStrategy": "PARALLEL",
+  "preferredLayout": "UNIFIED_LIST",
+  "needsClarification": true,
+  "clarificationQuestion": "好的，我可以帮您查询航班。请告诉我：\n1. 出发城市\n2. 到达城市\n3. 出发日期（如：明天、2026-02-03）"
+}
+说明：
+- 用户意图明确（查询航班），但缺少必要参数
+- 设置 needsClarification=true 要求用户补充信息
+- clarificationQuestion 明确列出缺少的参数
+
+### 示例 6：不明确的意图
 用户输入："帮我处理一下"
 输出：
 {
